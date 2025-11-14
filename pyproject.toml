@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rompy_ccam"
+description = "Rompy CCAM Config package."
+readme = "README.rst"
+authors = [
+  {name = "Rompy Developers", email = "developers@rompy.com"}
+]
+maintainers = [
+  {name = "Rompy Developers", email = "developers@rompy.com"}
+]
+classifiers = [
+
+]
+license = {text = "Apache Software License 2.0"}
+dependencies = [
+  "rompy",
+  
+]
+
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "coverage",
+    "mypy",
+    "pytest",
+    "ruff"
+    "black"
+    "requests"
+]
+docs = [
+    "autodoc_pydantic",
+    "ipython",
+    "nbsphinx",
+    "pydata_sphinx_theme",
+    "sphinx<7.3.6",
+    "sphinx-collections",
+]
+
+
+[project.entry-points."rompy.config"]
+ccam = "rompy_ccam.config:Config"
+
+[project.entry-points."rompy.source"]
+# Register here any new source. For example:
+# ccam_source_type = "rompy_ccam.source:CCAMSource"
+
+[project.urls]
+bugs = "https://github.com/rom-py/rompy_ccam/issues"
+changelog = "https://github.com/rom-py/rompy_ccam/blob/master/changelog.md"
+homepage = "https://github.com/rom-py/rompy_ccam"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "rompy_ccam.__version__"}
