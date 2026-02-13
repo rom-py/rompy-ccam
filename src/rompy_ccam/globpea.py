@@ -1,0 +1,1127 @@
+"""Rompy config for the globpea executable (the main CCAM model).
+
+This should match the CCAM namelist options at https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/
+and can be used to generate the namelist (.nml) and other files for a run of `globpea`.
+"""
+
+import logging
+from datetime import date, time
+from enum import IntEnum
+from pathlib import Path
+from typing import Optional
+
+from pydantic import Field, field_serializer
+
+from rompy_ccam.types import CCAMBaseConfig, Flag
+
+class GlobpeaNamelistConfigDefaults(CCAMBaseConfig):
+    """&defaults section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/defaults-default-switch-values/"""
+    nversion: Optional[str] = Field(
+        default=None,
+        description="Selects the version number in YYMM format of the required default switches. Defaults to the current version of CCAM.",
+    )
+
+class GlobpeaLeapMode(IntEnum):
+    """Whether to use leap years or 365-day calendars."""
+    NO_LEAP = 0
+    LEAP = 1
+
+# Unfortunately this enum isn't exhaustive - values of -1, -2900, and others are also valid
+class GlobpeaPrecon(IntEnum):
+    """Methods for solving the Helmholtz equation"""
+    PRECON_MULTI_GRID = -10000
+    PRECON_CONJUGATE_GRADIENT = 0
+    PRECON_SOR = -3900
+
+class GlobpeaDynamics(IntEnum):
+    """Allows for hydrostatic and non-hydrostatic dynamics."""
+    DYNAMICS_HYDROSTATIC = 0
+    DYNAMICS_NON_HYDROSTATIC = 5
+
+class GlobpeaHorizontalDiffusion(IntEnum):
+    """Method used for horizontal diffusion"""
+    HORIZONTAL_DIFFUSION_SMAGORINSKY = 0
+    HORIZONTAL_DIFFUSION_DEFORMATION = 1
+    HORIZONTAL_DIFFUSION_DEFORMATION2 = 2
+    HORIZONTAL_DIFFUSION_SMAG_TKE = 3
+
+class GlobpeaHorizontalDiffusionTerms(IntEnum):
+    """Controls horizontal diffusion for which terms"""
+    HORIZONTAL_DIFFUSION_TERMS_T_QG_TKE_U_V = 0
+    HORIZONTAL_DIFFUSION_TERMS_T_QG_TKE = -1
+    HORIZONTAL_DIFFUSION_TERMS_U_V = -2
+    HORIZONTAL_DIFFUSION_TERMS_QG = -3
+    HORIZONTAL_DIFFUSION_TERMS_T_QG_CLOUD_TKE_AEROSOLS = -4
+    HORIZONTAL_DIFFUSION_TERMS_T = -5
+    HORIZONTAL_DIFFUSION_TERMS_T_QG = -6
+
+class GlobpeaMassFixer(IntEnum):
+    """Mass fixer algorithm to use (if any)."""
+    MFIX_OFF = 0
+    MFIX_SEA_LEVEL_PRESSURE = -1
+    MFIX_SURFACE_PRESSURE_1 = 1
+    MFIX_SURFACE_PRESSURE_2 = 2
+    MFIX_SURFACE_PRESSURE_3 = 3
+
+class GlobpeaQGFix(IntEnum):
+    """Correction for saturated air."""
+    QGFIX_DISABLED = -1
+    QGFIX_INTERNAL_CHECKS = 0
+    QGFIX_REMOVE_NEGATIVE_MOISTURE = 1
+    QGFIX_REMOVE_SATURATED_MOISTURE = 2
+
+class GlobpeaFarFieldNudging(IntEnum):
+    """Far-field nudging options."""
+    NBD_OFF = 0
+    NBD_FAR_FIELD = 1
+    NBD_LINEARLY_INCREASING_PANEL_4 = -1
+    NBD_QUADRATICALLY_INCREASING_PANEL_4 = -2
+    NBD_FAR_FIELD_NO_PANEL_1 = -3
+    NBD_FAR_FIELD_2_NO_PANEL_1 = -4
+    NBD_FAR_FIELD_SOME_PANEL_1 = -5
+    NBD_1_WAY_NESTING = -6
+    NBD_FAR_FIELD_3_NO_PANEL_1 = -7
+    NBD_FAR_FIELD_NO_PANEL_1_SEPARATE_DAVU = 3
+    NBD_FAR_FIELD_2_NO_PANEL_1_SEPARATE_DAVU = 4
+    NBD_FAR_FIELD_SOME_PANEL_1_SEPARATE_DAVU = 5
+    NBD_1_WAY_NESTING_SEPARATE_DAVU = 6
+    NBD_FAR_FIELD_3_NO_PANEL_1_SEPARATE_DAVU = 7
+
+class GlobpeaNamip(IntEnum):
+    """Controls source of Sea Surface Temperatures (SSTs) and Sea-ice."""
+    NAMIP_NO_INPUT_DATA                              =  0 # No input data
+    NAMIP_PERSISTED_SST_ANOMALIES                    = -1 # Persisted SST anomalies
+    NAMIP_PWCB_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE     =  1 # Use PWCB intepolation for SSTs, diagnose sea-ice
+    NAMIP_LINEAR_INTERPOLATE_SSTS_AND_SEA_ICE        =  2 # Use linear interpolation for SSTs and sea-ice (assumes pre-processing of monthly SSTs)
+    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_MONTHLY      =  3 # Use PWCB interpolation for SSTs and sea-ice equals supplied monthly value
+    NAMIP_PWCB_INTERPOLATE_SSTS_AND_SEA_ICE          =  4 # Use PWCB interpolation for SSTs and sea-ice
+    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY =  5 # Use PWCB interpolation for SSTs, sea-ice and salinity
+    NAMIP_JMC_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE      = 11 # Use JMc interpolation for SSTs, diagnose sea-ice
+    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_MONTHLY       = 13 # Use JMc interpolation for SSTs and sea-ice equals supplied monthly
+    NAMIP_JMC_INTERPOLATE_SSTS_AND_SEA_ICE           = 14 # Use JMc interpolation for SSTs and sea-ice
+    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY  = 15 # Use JMc interpolation for SSTs, sea-ice and salinity
+    NAMIP_AMIP_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE     = 21 # Use approx linear AMIP interpolation for SSTs and diagnose sea-ice
+    NAMIP_AMIP_INTERPOLATE_SSTS_AND_SEA_ICE          = 24 # Use approx linear AMIP interpolation for SSTs and sea-ice
+    NAMIP_AMIP_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = 25 # Use approx linear AMIP interpolation for SSTs, sea-ice and salinity
+
+class GlobpeaHelmholtzMethod(IntEnum):
+    """Versions of D'Azevedo method to use in solving the Helmholtz equation."""
+    HELMMETH_DAZEVEDO_1 = 0 # !
+    HELMMETH_DAZEVEDO_STANDARD = 1
+
+def GlobpeaGridresRecommendedTimestep(gridres: int) -> int:
+    if gridres >= 60000:
+        return 900
+    if gridres >= 45000:
+        return 720
+    if gridres >= 36000:
+        return 600
+    if gridres >= 30000:
+        return 360
+    if gridres >= 18000:
+        return 300
+    if gridres >= 15000:
+        return 240
+    if gridres >= 12000:
+        return 180
+    if gridres >= 9000:
+        return 120
+    if gridres >= 6000:
+        return 90
+    if gridres >= 5000:
+        return 80
+    if gridres >= 4000:
+        return 60
+    if gridres >= 3000:
+        return 40
+    if gridres >= 1000:
+        return 20
+    if gridres >= 500:
+        return 10
+    if gridres >= 200:
+        return 4
+    if gridres >= 100:
+        return 2
+    raise ValueError(f"Grid resolution of {gridres} is too small.")
+
+class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
+    """&cardin section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/"""
+
+    # Date, run length and miscellaneous
+    kdate_s: date = Field(
+        description="Start date of simulation in YYYYMMDD format.",
+    )
+
+    @field_serializer('kdate_s')
+    def serialize_kdate_s(self, dt: date) -> str:
+        return dt.strftime('%Y%m%d')
+
+    ktime_s: time = Field(
+        default=time(0, 0),
+        description="Start time of simulation in ZZmm format.",
+    )
+
+    @field_serializer('ktime_s')
+    def serialize_ktime_s(self, t: time) -> str:
+        return t.strftime('%H%M')
+
+    leap: GlobpeaLeapMode = Field(
+        default=GlobpeaLeapMode.NO_LEAP,
+        description="To use leap years (LEAP) or to use 365-day calendar (NO_LEAP).",
+    )
+
+    # TODO: something should be calculating this from the grid resolution, but perhaps at a higher level
+    dt: float = Field(
+        # These are the same constraints as enforced by globpea; see https://github.com/csiro/ccam-ccam/blob/b09005f35f53ddedb23f671beb64364143f65acb/main/general/config_m.f90#L412
+        gt=0,
+        le=3600,
+        description="Simulation time-step in seconds. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/dt/ for more details.",
+    )
+    # TODO: something should calculate this as outputdt / dt
+    nwt: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Standard output period in time-steps.",
+    )
+
+    @field_serializer('nwt', mode='plain')
+    def serialize_nwt(self, nwt: Optional[int]) -> int:
+        """Globpea treats the -99 value as meaning 24 hours, i.e. daily output."""
+        return -99 if nwt is None else nwt
+
+    tbave: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="High-frequency output period in time-steps. Typically used for selected near surface variables (e.g., extreme rainfall).",
+    )
+
+    # TODO: further checking of tbave and ntau
+    # TODO: somewhere calculate ntau in terms of run length and dt
+    ntau: int = Field(
+        description="Run length of simulation in time-steps.",
+    )
+    # TODO: check this description. Most usage seems to just test `nmaxpr==1`, except one which tests `nmaxpr<=ntau`
+    nmaxpr: Optional[int] = Field(
+        default=None,
+        description="Period of output diagnostics in time-steps.",
+    )
+    newtop: Optional[int] = Field(
+        default=None,
+        ge=0,
+        le=2,
+        description="Adjust interpolated input data (e.g., nudging) for differences in orography (newtop=1).",
+    )
+    # TODO: define enum with valid values for this. The code doesn't match the documentation linked in the description, so for now it's unconstrained
+    nrungcm: Optional[int] = Field(
+        default=None,
+        description="Default option for soil datasets. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/nrungcm/ for more details.",
+    )
+    namip: Optional[GlobpeaNamip] = Field(
+        default=None,
+        description="Controls source of Sea Surface Temperatures and Sea-ice. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/namip/ for more details.",
+    )
+    rescrn: Optional[Flag] = Field(
+        default=None,
+        description="Recomputes near-surface diagnostics for consistency in output (rescrn=1).",
+    )
+    maxtilesize: Optional[int] = Field(
+        default=None,
+        description="Controls vector length for physics routines. Can lead to speed improvements when optimized for the host computer.",
+    )
+
+    # Dynamical core
+
+    helmmeth: Optional[GlobpeaHelmholtzMethod] = Field(
+        default=None,
+        description="Which version of D'Azevedo Method to use in solving the Helmholtz equation.",
+    )
+    # TODO: use GlobpeaPrecon (see comment there)?
+    precon: Optional[int] = Field(
+        default=None,
+        le=0,
+        description="Controls the method used to solve the Helmholtz equation (precon=-10000 for multi-grid, precon=0 for conjugate-gradient and precon=-3900 is for SOR).",
+    )
+    restol: Optional[float] = Field(
+        default=None,
+        description="Tolerance of the iterative solution for the Helmholtz equation.",
+    )
+    nh: Optional[GlobpeaDynamics] = Field(
+        default=None,
+        description="Allows for hydrostatic (nh=0) and non-hydrostatic (nh=5) dynamics.",
+    )
+    # TODO: can we constrain knh to >= 0? It looks like ccam allows -ve values, e.g. see https://github.com/csiro/ccam-ccam/blob/4c12a38bc2adbae976135f6387f8ca9b5068cfa6/dynamic/atmosphere/adjust5.f90#L322
+    knh: Optional[int] = Field(
+        default=None,
+        description="Delays the use of the non-hydrostatic dynamics for the specified number of time-steps. Has no effect if the initial conditions are a CCAM restart file. Effectively knh only works after interpolating initial conditions from a lower resolution.",
+    )
+    epsp: Optional[float] = Field(
+        default=None,
+        ge=-1.0,
+        le=1.0,
+        description="Off-centring term for pressure where epsp=-1 is fully explicit, epsp=0 is half explicit and half implicit, whereas epsp=1 is fully implicit.",
+    )
+    epsu: Optional[float] = Field(
+        default=None,
+        ge=-1.0,
+        le=1.0,
+        description="Off-centring term for momentum where epsu=-1 is fully explicit, epsu=0 is half explicit and half implicit, whereas epsu=1 is fully implicit.",
+    )
+    epsh: Optional[float] = Field(
+        default=None,
+        ge=-1.0,
+        le=1.0,
+        description="Off-centring term for non-hydrostatic equation where epsh=-1 is fully explicit, epsh=0 is half explicit and half implicit, whereas epsh=1 is fully implicit.",
+    )
+    # TODO: epsf?
+    nstagu: Optional[int] = Field(
+        default=None,
+        description="Controls period of switching direction for reversible staggering.",
+    )
+    khor: Optional[int] = Field(
+        default=None,
+        description="Controls strength of horizontal diffusion at different vertical levels.",
+    )
+    nhorjlm: Optional[GlobpeaHorizontalDiffusion] = Field(
+        default=None,
+        description="Method used for horizontal diffusion (nhorjlm=0 for Smagorinsky, nhorjlm=1 for deformation, nhorjlm=3 for Smag+TKE).",
+    )
+    nhorps: Optional[GlobpeaHorizontalDiffusionTerms] = Field(
+        default=None,
+        description="Controls horizontal diffusion for which terms.",
+    )
+    always_mspeca: Optional[bool] = Field(
+        default=None,
+        description="Forces CCAM to recalculate dynamics and radiation variables on the first time-step instead of using data from the restart file.",
+    )
+
+    # Mass fixer
+
+    mfix: Optional[GlobpeaMassFixer] = Field(
+        default=None,
+        description="Turns mass fixer on (mfix=1) or off (mfix=0) to conserve surface pressure.",
+    )
+    mfix_qg: Optional[Flag] = Field(
+        default=None,
+        description="Turns moisture fixer on or off to conserve moisture fields (i.e., qv, ql, qf, qs, qg).",
+    )
+    mfix_aero: Optional[Flag] = Field(
+        default=None,
+        description="Turns aerosol mass fixed on or off to conserve aerosol fields.",
+    )
+    qg_fix: Optional[GlobpeaQGFix] = Field(
+        default=None,
+        description="Correction for saturated air.",
+    )
+
+    # Nudging
+
+    nbd: Optional[GlobpeaFarFieldNudging] = Field(
+        default=None,
+        description="Far-field nudging options (nbd=-3). Spectral filter (mbd) is now the preferred option.",
+    )
+    mbd: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="Spectral filter. mbd=20 is the nudging for the length of the front panel. mbd=40 is half the size of the front panel, etc. Possibly overwritten by mbd_maxscale or mbd_maxgrid.",
+    )
+    mbd_maxscale: Optional[int] = Field(
+        default=None,
+        gt=0, # Must be >0 when mbd is not 0
+        description="Overrides mbd to limit the maximum length in kilometres. Default value set to 3000 km.",
+    )
+    mbd_maxgrid: Optional[int] = Field(
+        default=None,
+        gt=0, # Must be >0 when mbd is not 0
+        description="Overrides mbd to limit the maximum length in grid points, instead of width of the front panel.",
+    )
+    mbd_mlo: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="Spectral filter. The same as mbd but applied to the ocean model. mbd_mlo=20 is the nudging for the length of the front panel. mbd_mlo=40 is half the size of the front panel, etc. Possibly overwritten by mbd_maxscale_mlo or mbd_maxgrid_mlo.",
+    )
+    mbd_maxscale_mlo: Optional[int] = Field(
+        default=None,
+        gt=0, # Must be >0 when mbd_mlo is not 0
+        description="Same as mbd_maxscale, but applied to the ocean model.",
+    )
+    mbd_maxgrid_mlo: Optional[int] = Field(
+        default=None,
+        gt=0, # Must be >0 when mbd_mlo is not 0
+        description="Same as mbd_maxgrid, but applied to the ocean model.",
+    )
+    # TODO: is this still used as described? see ccam-ccam/main/file/nesting.f90
+    mloalpha: Optional[int] = Field(
+        default=None,
+        description="Nudging strength for the ocean model. mloalpha=10 is full strength, mloalpha=20 is half strength, etc.",
+    )
+    # TODO
+    nud_p: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_p=1) or off (nud_p=0) nudging for surface pressure.",
+    )
+    # TODO
+    nud_t: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_t=1) or off (nud_t=0) nudging for air temperture.",
+    )
+    # TODO
+    nud_q: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_q=1) or off (nud_q=0) nudging for water vapor.",
+    )
+    # TODO
+    nud_uv: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_uv=1) or off (nud_uv=0) nudging for winds.",
+    )
+    # TODO
+    nud_aero: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_aero=1) or off (nud_aero=0) nudging for aerosols.",
+    )
+    # TODO
+    nud_sst: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_sst=1) or off (nud_sst=0) nudging for ocean potential temperature.",
+    )
+    # TODO
+    nud_sss: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_sss=1) or off (nud_sss=0) nudging for ocean salinity.",
+    )
+    # TODO
+    nud_ouv: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_ouv=1) or off (nud_ouv=0) nudging for ocean currents.",
+    )
+    # TODO
+    nud_sfh: Optional[int] = Field(
+        default=None,
+        description="Turn on (nud_sfh=1) or off (nud_sfh=0) nudging for ocean surface height.",
+    )
+    # TODO
+    nud_hrs: Optional[int] = Field(
+        default=None,
+        description="E-folding time for far-field nudging.",
+    )
+    # TODO
+    nud_period: Optional[int] = Field(
+        default=None,
+        description="Limits the period (in mins) to nudge the atmosphere or ocean with the scale-selective filter. Actual nudging period is the minimum of nud_period and the period of data in the host model.",
+    )
+    # TODO
+    kbotdav: Optional[int] = Field(
+        default=None,
+        description="Lowest level for atmosphere nudging. -ve value specifies a pressure level with -1000 for 1000 hPa, etc.",
+    )
+    # TODO
+    ktopdav: Optional[int] = Field(
+        default=None,
+        description="Highest level for atmosphere nudging. -ve value specifies a pressure level with -1 for 1 hPa, etc.",
+    )
+    # TODO
+    ktopmlo: Optional[int] = Field(
+        default=None,
+        description="Highest level for ocean nudging. -ve value specifies a depth in sigma values with -1 being 0.001 sigma level.",
+    )
+    # TODO
+    kbotmlo: Optional[int] = Field(
+        default=None,
+        description="Lowest level for ocean nudging. -ve value specifies a depth in sigma values with -1000 being 1 sigma level.",
+    )
+    # TODO
+    sigramplow: Optional[float] = Field(
+        default=None,
+        description="Linear ramp rate to grow atmospheric nudging in sigma levels from kbotdav.",
+    )
+    # TODO
+    sigramphigh: Optional[float] = Field(
+        default=None,
+        description="Linear ramp rate to grow atmospheric nudging in sigma levels from ktopdav.",
+    )
+
+    # Ensemble
+
+    # TODO
+    ensemble_mode: Optional[int] = Field(
+        default=None,
+        description="Mode for CCAM ensemble with 0=off, 1=control and 2=breeding.",
+    )
+    # TODO
+    ensemble_period: Optional[int] = Field(
+        default=None,
+        description="Update period for ensemble members (mins). Default value is 720 mins.",
+    )
+    # TODO
+    ensemble_rsfactor: Optional[float] = Field(
+        default=None,
+        description="Scale factor for ensemble perturbation. 1.=no-scaling. Default value is 0.1.",
+    )
+
+    # Oceans, lakes and rivers
+
+    # TODO
+    nmlo: Optional[int] = Field(
+        default=None,
+        description="Options for ocean model. nmlo=0 for off, nmlo=-1 for single column ocean and nmlo=-3 for dynamical ocean.",
+    )
+    # TODO
+    ol: Optional[int] = Field(
+        default=None,
+        description="Number of vertical levels for the ocean model.",
+    )
+    # TODO
+    tss_sh: Optional[float] = Field(
+        default=None,
+        description="Sea Surface Temperature skin temperature enhancement factor.",
+    )
+    # TODO
+    nriver: Optional[int] = Field(
+        default=None,
+        description="Turns on (nriver=-1) or off (nriver=0) the river routing model.",
+    )
+
+    # Land, urban and carbon
+
+    # TODO
+    nsib: Optional[int] = Field(
+        default=None,
+        description="Selects the land-surface model with nsib=3 for original, nsib=5 for MODIS and nsib=7 for CABLE.",
+    )
+    # TODO
+    nurban: Optional[int] = Field(
+        default=None,
+        description="Turns on (nurban=-1) or off (nurban=0) the urban canopy model (aTEB).",
+    )
+    # TODO
+    vmodmin: Optional[float] = Field(
+        default=None,
+        description="Minimum wind speed for calculating surface fluxes in m/s.",
+    )
+    # TODO
+    nsigmf: Optional[int] = Field(
+        default=None,
+        description="Modifies soil behaviour with nsib=3 or nsib=5 to essentially increase the heat capacity. Not recommended for nrad=5.",
+    )
+    # TODO
+    jalbfix: Optional[int] = Field(
+        default=None,
+        description="Modifies albedo with nsib=3 or nsib=5 to increase the albedo over sandy soils. Not recommended for nrad=5.",
+    )
+
+    # Radiation and aerosols
+
+    # TODO
+    nrad: Optional[int] = Field(
+        default=None,
+        description="Radiation model with nrad=4 for original and nrad=5 for SEA-ESF (from GFDL AM3).",
+    )
+    # TODO
+    iaero: Optional[int] = Field(
+        default=None,
+        description="Specifies aerosol model. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/iaero/ for further details.",
+    )
+
+    # aboundary layer turbulent mixing
+
+    # TODO
+    nvmix: Optional[int] = Field(
+        default=None,
+        description="Boundary layer turbulence model with nvmix=3/7 for local-Ri and nvmix=6 for EDMF with k-e closure.",
+    )
+    # TODO
+    nlocal: Optional[int] = Field(
+        default=None,
+        description="Counter gradient model with nlocal=0 for off, nlocal=6 for diagnosed and nlocal=7 (with nvmix=6) for mass-flux.",
+    )
+
+    # Station output
+
+    # TODO
+    nstn: Optional[int] = Field(
+        default=None,
+        description="Number of output stations.",
+    )
+    # TODO
+    slon: Optional[int] = Field(
+        default=None,
+        description="List of longitudes for station output.",
+    )
+    # TODO
+    slat: Optional[int] = Field(
+        default=None,
+        description="List of latitudes for station output.",
+    )
+
+    # File input/output
+
+    # TODO
+    localhist: Optional[bool] = Field(
+        default=None,
+        description="Allows CCAM to write output in parallel. localhist=.true. can lead to significant speed improvements for higher numbers of CPUs.",
+    )
+    # TODO
+    unlimitedhist: Optional[bool] = Field(
+        default=None,
+        description="Use unlimited dimension for output file with unlimitedhist=.true. There can be some speed advantages for using unlimitedhist=.false. although visualizing the data can be difficult.",
+    )
+    # TODO
+    synchist: Optional[bool] = Field(
+        default=None,
+        description="Flush output buffers after writing data with synchist=true, which can be useful for debugging.",
+    )
+    # TODO
+    compression: Optional[int] = Field(
+        default=None,
+        description="Compression level for output from 0 (no compression) to 9 (high compression). compression=1 is recommended.",
+    )
+    # TODO
+    hp_output: Optional[int] = Field(
+        default=None,
+        description="Output file precision (0=short, 1=float). Using hp_output=0 for short precision can halve the file size.",
+    )
+
+class GlobpeaNamelistConfigSkyin(CCAMBaseConfig):
+    """&skyin section of globpea config namelist. Options to modify the behaviour of radiation and aerosols."""
+
+    # Radiation
+
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    mins_rad: Optional[int] = Field(
+        default=None,
+        description="Period to update radiation in mins.  Setting mins_rad=-1 will automatically select a value based on the grid resolution.",
+    )
+    # TODO
+    qgmin: Optional[int] = Field(
+        default=None,
+        description="Minimum value of water vapor mixing ratio.",
+    )
+    # TODO
+    sw_resolution: Optional[int] = Field(
+        default=None,
+        description="Selects number of radiation bands with sw_resolution=’high’ or sw_resolution=’low’.",
+    )
+    # TODO
+    sw_diff_streams: Optional[int] = Field(
+        default=None,
+        description="Number of streams for diffuse radiation with 1 or 4 as valid options.",
+    )
+    # TODO
+    liqradmethod: Optional[int] = Field(
+        default=None,
+        description="Method for calculating effective water droplet radius.  Currently the only valid option is 0 for Martin et al 1994.",
+    )
+    # TODO
+    iceradmethod: Optional[int] = Field(
+        default=None,
+        description="Method for calculating effective ice droplet radius.  iceradmethod=0 for Lohmann et al 1999, iceradmethod=1 for Donner et al 1997, iceradmethod=2 for Fu 2007.",
+    )
+    # TODO
+    bpyear: Optional[int] = Field(
+        default=None,
+        description="Modifies orbital parameters for paleoclimate simulations.  Valid options are 0, 6000 and 21000 years before present.",
+    )
+
+    # Aerosols
+
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    ch_dust: Optional[int] = Field(
+        default=None,
+        description="Scale factor for dust emission model.",
+    )
+    # TODO
+    zvolcemi: Optional[int] = Field(
+        default=None,
+        description="Scale factor for volcanic emission model.",
+    )
+    # TODO
+    so4radmethod: Optional[int] = Field(
+        default=None,
+        description="Turns on (so4radmethod=0) and off (so4radmethod=-1) SO4 aerosol direct effects.",
+    )
+    # TODO
+    carbonradmethod: Optional[int] = Field(
+        default=None,
+        description="Turns on (carbonradmethod=0) and off (carbonradmethod=-1) carbonaceous aerosol direct effects.",
+    )
+    # TODO
+    dustradmethod: Optional[int] = Field(
+        default=None,
+        description="Turns on (dustradmethod=0) and off (dustradmethod=-1) dust aerosol direct effects.",
+    )
+    # TODO
+    seasaltradmethod: Optional[int] = Field(
+        default=None,
+        description="Turns on (seasaltradmethod=0) and off (seasaltradmethod=-1) sea-salt aerosol direct effects.",
+    )
+    # TODO
+    aeroindir: Optional[int] = Field(
+        default=None,
+        description="Controls aerosol indirect effects with aeroindir=0 for SO4+Carb+Salt, aeroindir=1 for SO4 and aeroindir=2 for off.",
+    )
+    # TODO
+    so4mtn: Optional[int] = Field(
+        default=None,
+        description="Mass to number conversion for SO4.  Modifies indirect effects.",
+    )
+    # TODO
+    carbmtn: Optional[int] = Field(
+        default=None,
+        description="Mass to number conversion for carbonaceous aerosols.  Modifies indirect effects.",
+    )
+    # TODO
+    saltsmallmtn: Optional[int] = Field(
+        default=None,
+        description="Mass to number conversion for sea-salt film mode.  Modifies direct effects.",
+    )
+    # TODO
+    saltlagemtn: Optional[int] = Field(
+        default=None,
+        description="Mass to number conversion for sea-salt jet mode.  Modifies direct effects.",
+    )
+
+
+
+class GlobpeaNamelistConfigDatafile(CCAMBaseConfig):
+    """&datafile section of globpea config namelist. Specify input and output filenames."""
+
+    # Initial conditions and output
+
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    ifile: Optional[int] = Field(
+        default=None,
+        description="Initial conditions in conformal cubic format.  Missing data can be diagnosed under some circumstances (e.g., soil temperatures).",
+    )
+    # TODO
+    surf_00: Optional[int] = Field(
+        default=None,
+        description="Optional input to replace soil data in conformal cubic format (overwrites soil data from ifile).  Typically used in NWP applications to use soil data from previous forecast.",
+    )
+    # TODO
+    ofile: Optional[int] = Field(
+        default=None,
+        description="Output history file in conformal cubic format.  Can be used as a restart file, although data is compressed.",
+    )
+    # TODO
+    restfile: Optional[int] = Field(
+        default=None,
+        description="Output restart file in conformal cubic format.  Saves model prognostic variables without compression for a subsequent restart.  Typically used at the end of each simulation month.",
+    )
+    # TODO
+    surfile: Optional[int] = Field(
+        default=None,
+        description="High frequency output file in conformal cubic format.  Saves model output for uas, vas, tas, ps, rnd and rnc.  Typically used to save model output every time-step.",
+    )
+    # TODO
+    save_aerosols: Optional[int] = Field(
+        default=None,
+        description="T to save various aerosol values.",
+    )
+    # TODO
+    save_pbl: Optional[int] = Field(
+        default=None,
+        description="T to save pbl information.",
+    )
+    # TODO
+    save_cloud: Optional[int] = Field(
+        default=None,
+        description="T to save cloud information (lo,mid,hi, …).",
+    )
+    # TODO
+    save_land: Optional[int] = Field(
+        default=None,
+        description="T to save information about land surface.",
+    )
+    # TODO
+    save_maxmin: Optional[int] = Field(
+        default=None,
+        description="T to save daily maximum/minimum values (such as tas, rnd24).",
+    )
+    # TODO
+    save_ocean: Optional[int] = Field(
+        default=None,
+        description="T to save ocean information.",
+    )
+    # TODO
+    save_radiation: Optional[int] = Field(
+        default=None,
+        description="T to save radiation parameters.",
+    )
+    # TODO
+    save_urban: Optional[int] = Field(
+        default=None,
+        description="T to save urban scheme values.",
+    )
+    # TODO
+    save_carbon: Optional[int] = Field(
+        default=None,
+        description="T to save parameters related to the land surface carbon scheme.",
+    )
+    # TODO
+    save_river: Optional[int] = Field(
+        default=None,
+        description="T to save river flow information.",
+    )
+
+    # Nudging and Sea Surface Temperature data
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    mesonest: Optional[int] = Field(
+        default=None,
+        description="Host dataset for nudging in conformal cubic format.",
+    )
+    # TODO
+    sstfile: Optional[int] = Field(
+        default=None,
+        description="Monthly Sea Surface Temperature and Sea Ice.  Typically used for AMIP style experiments.",
+    )
+
+    # Vertical level data
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    eigenv: Optional[int] = Field(
+        default=None,
+        description="Specifies vertical levels.  CCAM recomputes eigenvectors are run-time.",
+    )
+
+    # Topography files
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    topofile: Optional[int] = Field(
+        default=None,
+        description="Specifies surface geopotential height, land-sea mask and standard deviation of sub-grid orography heights.",
+    )
+    # TODO
+    vegprev: Optional[int] = Field(
+        default=None,
+        description="Optional input for specifying vegetation data for the previous month into the past for interpolation.",
+    )
+    # TODO
+    vegfile: Optional[int] = Field(
+        default=None,
+        description="Specified vegetation data for the current month, including vegetation type, Leaf Area Index, soil texture, albedo, urban fraction and urban type.  Also optionally includes Plant Functional Type configuration data and urban category configuration data.",
+    )
+    # TODO
+    vegnext: Optional[int] = Field(
+        default=None,
+        description="Optional input for specifying vegetation data for the next month into the future for interpolation.",
+    )
+    # TODO
+    vegnext2: Optional[int] = Field(
+        default=None,
+        description="Optional input for specifying vegetation data for the next two months into the future for interpolation.",
+    )
+    # TODO
+    bathfile: Optional[int] = Field(
+        default=None,
+        description="Optional input for specifying bathymetry and river routing data.",
+    )
+
+    # Radiation files
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    radfile: Optional[int] = Field(
+        default=None,
+        description="Specifies greenhouse gas concentrations.",
+    )
+    # TODO
+    o3file: Optional[int] = Field(
+        default=None,
+        description="Specifies ozone concentrations.",
+    )
+    # TODO
+    cnsdir: Optional[int] = Field(
+        default=None,
+        description="Specifies location of radiation datafiles.",
+    )
+
+    # Aerosol files
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    so4tfile: Optional[int] = Field(
+        default=None,
+        description="For prognostic aerosols (iaero=2 or iaero=-2), specifies the aerosol emission data.  For prescribed aerosols (iaero=1), specifies the SO4 burden.",
+    )
+    # TODO
+    oxidantfile: Optional[int] = Field(
+        default=None,
+        description="Specifies oxidant concentrations for the prognostic aerosol scheme.",
+    )
+
+    # Carbon cycle files
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    casafile: Optional[int] = Field(
+        default=None,
+        description="Emission data for the carbon cycle model.",
+    )
+    # TODO
+    phenfile: Optional[int] = Field(
+        default=None,
+        description="Specifies plant phenology data for the CASA carbon cycle model.",
+    )
+
+class GlobpeaNamelistConfigKuo(CCAMBaseConfig):
+    """&kuonml section of globpea config namelist. Options to modify convection and cloud microphysics."""
+
+    # Convection
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    nkuo: Optional[int] = Field(
+        default=None,
+        description="specifies the convection model.",
+    )
+
+    # Cloud microphysics
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    ncloud: Optional[int] = Field(
+        default=None,
+        description="specifies the model used for cloud microphysics.  Further details can be obtained from https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/kuonml-convection-and-cloud-microphysics/ncloud/.",
+    )
+    # TODO
+    ldr: Optional[int] = Field(
+        default=None,
+        description="1,2,3,4,5,11,22,33,55 for different snow fall speed.",
+    )
+
+class GlobpeaNamelistConfigTurb(CCAMBaseConfig):
+    """&turbnml section of globpea config namelist. Options to modify boundary layer turbulent mixing and gravity wave drag."""
+
+    # Gravity wave drag
+    # TODO: set correct data types, defaults etc.
+    # TODO
+    ngwd: Optional[int] = Field(
+        default=None,
+        description="Coefficient to limit launching height.",
+    )
+    # TODO
+    helim: Optional[int] = Field(
+        default=None,
+        description="Maximum launching height.",
+    )
+    # TODO
+    fc2: Optional[int] = Field(
+        default=None,
+        description="Coefficient for calculating Froude number.",
+    )
+    # TODO
+    sigbot_gwd: Optional[int] = Field(
+        default=None,
+        description="Lowest sigma level for gravity wave drag.",
+    )
+    # TODO
+    alphaj: Optional[int] = Field(
+        default=None,
+        description="Coefficient for Chouinard et al model.",
+    )
+
+    # Boundary layer eddy diffusivity
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    buoymeth: Optional[int] = Field(
+        default=None,
+        description="Method used for calculating buoyancy.  buoymeth=0 for Durran and Klempt 1982, buoymeth=1 for Marquet and Geleyn 2012, buoymeth=2 for dry convection.",
+    )
+    # TODO
+    stabmeth: Optional[int] = Field(
+        default=None,
+        description="– Method for calculating stability.  stabmeth=0 for Beljarrs and Holtslag 1991.  stabmeth=1 for Luhar correction.",
+    )
+    # TODO
+    cm0: Optional[int] = Field(
+        default=None,
+        description="ce0, ce1, ce2, ce3 – Coefficients for k-e turbulence closure model.",
+    )
+    # TODO
+    cq: Optional[int] = Field(
+        default=None,
+        description="Mixing enhancement to compensate for the absence of a counter gradient term.",
+    )
+    # TODO
+    maxdts: Optional[int] = Field(
+        default=None,
+        description="Maximum time-step for the k-e model.",
+    )
+    # TODO
+    mintke: Optional[int] = Field(
+        default=None,
+        description="Minimum value of turbulent kinetic energy.",
+    )
+    # TODO
+    mineps: Optional[int] = Field(
+        default=None,
+        description="Minimum value of eddy dissipation.",
+    )
+    # TODO
+    minl: Optional[int] = Field(
+        default=None,
+        description="maxl – Minimum and maximum length scale.",
+    )
+
+    # Boundary layer mass flux
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    be: Optional[int] = Field(
+        default=None,
+        description="Coefficient for surface boundary condition .",
+    )
+    # TODO
+    ent0: Optional[int] = Field(
+        default=None,
+        description="ent1 – Constants to define the entrainment parameterisation.",
+    )
+    # TODO
+    entc0: Optional[int] = Field(
+        default=None,
+        description="dtrc0 – Entrainment and detrainment rates for saturated air.",
+    )
+    # TODO
+    m0: Optional[int] = Field(
+        default=None,
+        description="Mass flux amplitude constant.",
+    )
+    # TODO
+    b1: Optional[int] = Field(
+        default=None,
+        description="b2 – Updraft entrainment and buoyancy coefficients.",
+    )
+    # TODO
+    qcmf: Optional[int] = Field(
+        default=None,
+        description="Critical mixing ratio for liquid water before autoconversion.",
+    )
+
+class GlobpeaNamelistConfigLand(CCAMBaseConfig):
+    """&landnml section of globpea config namelist. Options to modify land-surface, urban and carbon cycle."""
+    # TODO: set correct data types, defaults etc.
+    # TODO
+    proglai: Optional[int] = Field(
+        default=None,
+        description="Method for calculation LAI.  proglai=-1 for piece-wise linear interpolation (requires 4 input months), proglai=0 for PWCB interpolation (requires 3 input months) and proglai=1 for prognostic LAI.",
+    )
+    # TODO
+    ccycle: Optional[int] = Field(
+        default=None,
+        description="Carbon cycle model.  ccycle=0 for off and ccycle=3 for C-N-P cycle.",
+    )
+
+class GlobpeaNamelistConfigMlo(CCAMBaseConfig):
+    """&mlonml section of globpea config namelist. Options to modify oceans, lakes, rivers and sea-ice."""
+
+    # Ocean dynamics
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    mlodiff: Optional[int] = Field(
+        default=None,
+        description="Modifies horizontal diffusion with mlodiff=0 for T,U,V&S and mlodiff=1 for T&S.",
+    )
+    # TODO
+    ocnsmag: Optional[int] = Field(
+        default=None,
+        description="Coefficient for Smagorinsky closure.",
+    )
+    # TODO
+    ocneps: Optional[int] = Field(
+        default=None,
+        description="Off-centring term for ocean dynamics (-1 is fully explicit, 0 is half explicit and half implicit and 1 is fully implicit).",
+    )
+    # TODO
+    usetide: Optional[int] = Field(
+        default=None,
+        description="Include tidal forcing with usetide=0 for off and usetide=1 for on.",
+    )
+    # TODO
+    zomode: Optional[int] = Field(
+        default=None,
+        description="Roughness length calculation over water with 0=Charnock and 2=Beljaars.",
+    )
+    # TODO
+    zoseaice: Optional[int] = Field(
+        default=None,
+        description="Roughness length for sea-ice in meters.",
+    )
+    # TODO
+    factchseaice: Optional[int] = Field(
+        default=None,
+        description="Ratio of roughness length between momentum and heat for sea-ice.",
+    )
+    # TODO
+    minwater: Optional[int] = Field(
+        default=None,
+        description="Minimum amount of water allowed in the column.",
+    )
+    # TODO
+    mxd: Optional[int] = Field(
+        default=None,
+        description="Maximum depth of the water column.",
+    )
+    # TODO
+    mindep: Optional[int] = Field(
+        default=None,
+        description="Maximum depth of the first model level.",
+    )
+    # TODO
+    mlofix: Optional[int] = Field(
+        default=None,
+        description="Conservation method.",
+    )
+
+    # River routing
+    # TODO: set correct data types, defaults etc.
+
+    # TODO
+    rivermd: Optional[int] = Field(
+        default=None,
+        description="River routing method (rivermd=0 for Miller and rivermd=1 for Manning).",
+    )
+    # TODO
+    basinmd: Optional[int] = Field(
+        default=None,
+        description="River routing method for inland depressions (basinmd=0 for drain into soil).",
+    )
+    # TODO
+    rivercoeff: Optional[int] = Field(
+        default=None,
+        description="River routing roughness coefficient.",
+    )
+
+class GlobpeaNamelistConfigTrfiles(CCAMBaseConfig):
+    """&trfiles section of globpea config namelist. Options for specifying user-defined tracers."""
+    tracerlist: Optional[Path] = Field(
+        default=None,
+        description="Input tracer configuration file. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/trfiles-tracers/tracerlist/ for more details.",
+    )
+
+class GlobpeaNamelistConfig(CCAMBaseConfig):
+    """Configuration for the globpea executable's configuration namelist."""
+    defaults: GlobpeaNamelistConfigDefaults
+    cardin: GlobpeaNamelistConfigCardin
+    skyin: GlobpeaNamelistConfigSkyin
+    datafile: GlobpeaNamelistConfigDatafile
+    kuonml: GlobpeaNamelistConfigKuo
+    turbnml: GlobpeaNamelistConfigTurb
+    landnml: GlobpeaNamelistConfigLand
+    mlonml: GlobpeaNamelistConfigMlo
+    trfiles: GlobpeaNamelistConfigTrfiles
+
+class GlobpeaConfig(CCAMBaseConfig):
+    """Configuration for the globpea executable, the main CCAM model."""
+    input: GlobpeaNamelistConfig

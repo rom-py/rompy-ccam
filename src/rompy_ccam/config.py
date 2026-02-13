@@ -5,16 +5,15 @@ from pathlib import Path
 from typing import Literal
 from pydantic import Field
 
-from rompy.core.config import BaseConfig
-
+from rompy_ccam.types import CCAMBaseConfig
 
 logger = logging.getLogger(__name__)
 
 HERE = Path(__file__).parent
 
 
-class Config(BaseConfig):
-    """Ccam config class."""
+class CCAMConfig(CCAMBaseConfig):
+    """CCAM config class."""
 
     model_type: Literal["ccam"] = Field(
         default="ccam",
