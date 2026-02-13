@@ -18,7 +18,7 @@ classifiers = [
 license = {text = "Apache Software License 2.0"}
 dependencies = [
   "rompy",
-  
+
 ]
 
 dynamic = ["version"]
@@ -28,8 +28,8 @@ dev = [
     "coverage",
     "mypy",
     "pytest",
-    "ruff"
-    "black"
+    "ruff",
+    "black",
     "requests"
 ]
 docs = [
