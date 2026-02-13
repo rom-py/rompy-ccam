@@ -22,6 +22,10 @@ Rompy CCAM Config package.
 * Free software: Apache Software License 2.0
 * Documentation: https://rompy-ccam.readthedocs.io.
 
+Notice
+------
+
+**This is a work in progress! It is not yet usable!**
 
 Features
 --------
