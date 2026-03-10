@@ -1,5 +1,5 @@
 from importlib.metadata import entry_points
-from rompy_ccam.config import Config
+from rompy_ccam.config import CCAMConfig
 
 
 def test_config_entrypoint():
