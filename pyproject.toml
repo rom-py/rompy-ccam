@@ -18,7 +18,7 @@ classifiers = [
 license = {text = "Apache Software License 2.0"}
 dependencies = [
   "rompy",
-
+  "typer"
 ]
 
 dynamic = ["version"]
@@ -33,14 +33,14 @@ dev = [
     "requests"
 ]
 docs = [
-    "autodoc_pydantic",
-    "ipython",
-    "nbsphinx",
-    "pydata_sphinx_theme",
-    "sphinx<7.3.6",
-    "sphinx-collections",
+    "mkdocs<2.0",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "pymdown-extensions",
 ]
 
+[project.scripts]
+rompy_ccam = "rompy_ccam.cli:app"
 
 [project.entry-points."rompy.config"]
 ccam = "rompy_ccam.config:Config"
