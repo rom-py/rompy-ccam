@@ -5,6 +5,7 @@ from pydantic import Field
 
 from rompy_ccam.types import CCAMBaseConfig
 
+
 class AeroemissConfigAero(CCAMBaseConfig):
     """&aero section of AEROEMISS config namelist."""
 
@@ -70,7 +71,8 @@ class AeroemissConfigAero(CCAMBaseConfig):
 class AeroemissConfig(CCAMBaseConfig):
     """Configuration options to be given to the aeroemiss executable.
 
-    AEROEMISS creates aerosol emissions for CCAM.  Prognostic aerosols can influence the CCAM simulation through direct effects on the simulated radiation, as well as indirect effects with the cloud microphysics."""
+    AEROEMISS creates aerosol emissions for CCAM.  Prognostic aerosols can influence the CCAM simulation through direct effects on the simulated radiation, as well as indirect effects with the cloud microphysics.
+    """
 
     output: Path = Field(
         description="The output.nc Erosol emission file on the cubic grid."

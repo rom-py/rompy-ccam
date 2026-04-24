@@ -4,8 +4,10 @@ from pydantic import Field
 
 from rompy_ccam.types import CCAMBaseConfig
 
+
 class OcnbathConfigOcn:
     """&ocnnml section of OCNBATH config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/ocnbath-bathymetry-and-river-routing/."""
+
     # TODO: set correct data types, defaults etc.
     bathout: Optional[int] = Field(
         default=None,
@@ -36,6 +38,8 @@ class OcnbathConfigOcn:
         description="Minimum number of input data points that need to be included in an output grid point before switching from aggregation to interpolation.",
     )
 
+
 class OcnbathConfig(CCAMBaseConfig):
     """Configuration for the ocnbath executable. To be output as a namelist file, e.g. ocnbath.nml."""
+
     ocnnml: OcnbathConfigOcn

@@ -1,92 +1,203 @@
-from typing import Optional
+from typing import Optional, Annotated
+from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam.types import CCAMBaseConfig
+from rompy_ccam.types import CCAMBaseConfig, NMLConfig, Input, Output
+
 
 class CdfvidarNamelistConfigG(CCAMBaseConfig):
     """&gnml section of CDFVIDAR config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/cdfvidar-process-lat-lon-input-to-cubic/."""
+
     # TODO: set correct data types, defaults etc.
     kl: Optional[int] = Field(
         default=None,
         description="Number of vertical levels.",
     )
-    t_file: Optional[int] = Field(
-        default=None,
-        description="Input air temperature.",
-    )
-    rh_file: Optional[int] = Field(
-        default=None,
-        description="Input relative humidity or mixing ratio or specific humidity.",
-    )
-    u_file: Optional[int] = Field(
-        default=None,
-        description="Input zonal wind.",
-    )
-    v_file: Optional[int] = Field(
-        default=None,
-        description="Input meridonal wind.",
-    )
-    z_file: Optional[int] = Field(
-        default=None,
-        description="(optional) input geopotential height.",
-    )
-    lsm_file: Optional[int] = Field(
-        default=None,
-        description="input land-sea mask.",
-    )
-    zs_file: Optional[int] = Field(
-        default=None,
-        description="input surface geopotential height.",
-    )
-    ps_file: Optional[int] = Field(
-        default=None,
-        description="input surface pressure.",
-    )
-    psl_file: Optional[int] = Field(
-        default=None,
-        description="(optional) input mean sea level pressure.",
-    )
-    ts_file: Optional[int] = Field(
-        default=None,
-        description="input surface temperature (or tos for water).",
-    )
-    sic_file: Optional[int] = Field(
-        default=None,
-        description="(optional) input sea-ice fraction.",
-    )
-    snod_file: Optional[int] = Field(
-        default=None,
-        description="(optional) input snow depth file.",
-    )
-    soiltemp_file: Optional[int] = Field(
-        default=None,
-        description="(optional) input soil temperature file.",
-    )
-    soilmois_file: Optional[int] = Field(
-        default=None,
-        description="(optional) input soil moisture file.",
-    )
-    inf: Optional[int] = Field(
-        default=None,
-        description="(optional) single file input with all variables.  Used for backwards compatibility..",
-    )
-    zsfil: Optional[int] = Field(
-        default=None,
-        description="Topography file (from terread) to be used to remap the meteorological data.",
-    )
-    vfil: Optional[int] = Field(
-        default=None,
-        description="Output file for the conformal cubic grid.",
-    )
-    sgml: Optional[int] = Field(
-        default=None,
+    t_file: Annotated[
+        Optional[Path],
+        Input,
+        Field(
+            default=None,
+            description="Input air temperature.",
+        ),
+    ]
+    rh_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Input relative humidity or mixing ratio or specific humidity.",
+        ),
+        Input,
+    ]
+    u_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Input zonal wind.",
+        ),
+        Input,
+    ]
+    v_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Input meridonal wind.",
+        ),
+        Input,
+    ]
+    z_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) input geopotential height.",
+        ),
+        Input,
+    ]
+    lsm_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="input land-sea mask.",
+        ),
+        Input,
+    ]
+    zs_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="input surface geopotential height.",
+        ),
+        Input,
+    ]
+    ps_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="input surface pressure.",
+        ),
+        Input,
+    ]
+    psl_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) input mean sea level pressure.",
+        ),
+        Input,
+    ]
+    ts_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="input surface temperature (or tos for water).",
+        ),
+        Input,
+    ]
+    sic_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) input sea-ice fraction.",
+        ),
+        Input,
+    ]
+    snod_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) input snow depth file.",
+        ),
+        Input,
+    ]
+    soiltemp_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) input soil temperature file.",
+        ),
+        Input,
+    ]
+    soilmois_file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) input soil moisture file.",
+        ),
+        Input,
+    ]
+    inf: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="(optional) single file input with all variables.  Used for backwards compatibility.",
+        ),
+        Input,
+    ]
+    zsfil: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Topography file (from terread) to be used to remap the meteorological data.",
+        ),
+        Input,
+    ]
+    vfil: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Output file for the conformal cubic grid.",
+        ),
+        Output,
+    ]
+    sgml: list[float] = Field(
+        default=[],
         description="List of sigma levels for vertical interpolation.",
     )
 
-class CdfvidarNamelistConfig(CCAMBaseConfig):
+    # The below were undocumented at time of writing, but in use
+    inzsavn: Optional[int] = Field(default=None, description="TODO")
+    zsavn: Annotated[
+        Optional[Path],
+        Field(default=None, description="TODO"),
+        Input,
+    ]
+    inlsavn: Optional[int] = Field(default=None, description="TODO")
+    lsavn: Annotated[
+        Optional[Path],
+        Field(default=None, description="TODO"),
+        Input,
+    ]
+    io_out: Optional[int] = Field(default=None, description="TODO")
+    nrh: Optional[int] = Field(default=None, description="TODO")
+    mxcyc: Optional[int] = Field(default=None, description="TODO")
+    debug: Optional[bool] = Field(default=None, description="TODO")
+    nvsig: Optional[int] = Field(default=None, description="TODO")
+    in_: Optional[int] = Field(
+        default=None, description="TODO", serialization_alias="in"
+    )
+    iout: Optional[int] = Field(default=None, description="TODO")
+    notop: Optional[bool] = Field(default=None, description="TODO")
+    oform: Optional[bool] = Field(default=None, description="TODO")
+    oesig: Optional[bool] = Field(default=None, description="TODO")
+    ptop: Optional[float] = Field(default=None, description="TODO")
+    calout: Optional[bool] = Field(default=None, description="TODO")
+    ints: Optional[int] = Field(default=None, description="TODO")
+    inzs: Optional[int] = Field(default=None, description="TODO")
+    opre: Optional[bool] = Field(default=None, description="TODO")
+    spline: Optional[bool] = Field(default=None, description="TODO")
+    ntimes: Optional[int] = Field(default=None, description="TODO")
+    splineu: Optional[bool] = Field(default=None, description="TODO")
+    splinev: Optional[bool] = Field(default=None, description="TODO")
+    splinet: Optional[bool] = Field(default=None, description="TODO")
+    zerowinds: Optional[bool] = Field(default=None, description="TODO")
+
+
+class CdfvidarNamelistConfig(NMLConfig):
     """Configuration for the cdfvidar executable's configuration namelist."""
+
     gnml: CdfvidarNamelistConfigG
+
 
 class CdfvidarConfig(CCAMBaseConfig):
     """Configuration options to be given to the cdfvidar executable.
@@ -133,3 +244,6 @@ class CdfvidarConfig(CCAMBaseConfig):
     """
 
     input: CdfvidarNamelistConfig
+
+    def __call__(self, *args, **kwargs):
+        self.input.write_nml_file()

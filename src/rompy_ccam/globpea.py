@@ -4,49 +4,60 @@ This should match the CCAM namelist options at https://research.csiro.au/ccam/so
 and can be used to generate the namelist (.nml) and other files for a run of `globpea`.
 """
 
-import logging
 from datetime import date, time
 from enum import IntEnum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Annotated
 
 from pydantic import Field, field_serializer
 
-from rompy_ccam.types import CCAMBaseConfig, Flag
+from rompy_ccam.types import CCAMBaseConfig, Flag, NMLConfig, Input, Output
+
 
 class GlobpeaNamelistConfigDefaults(CCAMBaseConfig):
     """&defaults section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/defaults-default-switch-values/"""
+
     nversion: Optional[str] = Field(
         default=None,
         description="Selects the version number in YYMM format of the required default switches. Defaults to the current version of CCAM.",
     )
 
+
 class GlobpeaLeapMode(IntEnum):
     """Whether to use leap years or 365-day calendars."""
+
     NO_LEAP = 0
     LEAP = 1
+
 
 # Unfortunately this enum isn't exhaustive - values of -1, -2900, and others are also valid
 class GlobpeaPrecon(IntEnum):
     """Methods for solving the Helmholtz equation"""
+
     PRECON_MULTI_GRID = -10000
     PRECON_CONJUGATE_GRADIENT = 0
     PRECON_SOR = -3900
 
+
 class GlobpeaDynamics(IntEnum):
     """Allows for hydrostatic and non-hydrostatic dynamics."""
+
     DYNAMICS_HYDROSTATIC = 0
     DYNAMICS_NON_HYDROSTATIC = 5
 
+
 class GlobpeaHorizontalDiffusion(IntEnum):
     """Method used for horizontal diffusion"""
+
     HORIZONTAL_DIFFUSION_SMAGORINSKY = 0
     HORIZONTAL_DIFFUSION_DEFORMATION = 1
     HORIZONTAL_DIFFUSION_DEFORMATION2 = 2
     HORIZONTAL_DIFFUSION_SMAG_TKE = 3
 
+
 class GlobpeaHorizontalDiffusionTerms(IntEnum):
     """Controls horizontal diffusion for which terms"""
+
     HORIZONTAL_DIFFUSION_TERMS_T_QG_TKE_U_V = 0
     HORIZONTAL_DIFFUSION_TERMS_T_QG_TKE = -1
     HORIZONTAL_DIFFUSION_TERMS_U_V = -2
@@ -55,23 +66,29 @@ class GlobpeaHorizontalDiffusionTerms(IntEnum):
     HORIZONTAL_DIFFUSION_TERMS_T = -5
     HORIZONTAL_DIFFUSION_TERMS_T_QG = -6
 
+
 class GlobpeaMassFixer(IntEnum):
     """Mass fixer algorithm to use (if any)."""
+
     MFIX_OFF = 0
     MFIX_SEA_LEVEL_PRESSURE = -1
     MFIX_SURFACE_PRESSURE_1 = 1
     MFIX_SURFACE_PRESSURE_2 = 2
     MFIX_SURFACE_PRESSURE_3 = 3
 
+
 class GlobpeaQGFix(IntEnum):
     """Correction for saturated air."""
+
     QGFIX_DISABLED = -1
     QGFIX_INTERNAL_CHECKS = 0
     QGFIX_REMOVE_NEGATIVE_MOISTURE = 1
     QGFIX_REMOVE_SATURATED_MOISTURE = 2
 
+
 class GlobpeaFarFieldNudging(IntEnum):
     """Far-field nudging options."""
+
     NBD_OFF = 0
     NBD_FAR_FIELD = 1
     NBD_LINEARLY_INCREASING_PANEL_4 = -1
@@ -87,62 +104,92 @@ class GlobpeaFarFieldNudging(IntEnum):
     NBD_1_WAY_NESTING_SEPARATE_DAVU = 6
     NBD_FAR_FIELD_3_NO_PANEL_1_SEPARATE_DAVU = 7
 
+
 class GlobpeaNamip(IntEnum):
     """Controls source of Sea Surface Temperatures (SSTs) and Sea-ice."""
-    NAMIP_NO_INPUT_DATA                              =  0 # No input data
-    NAMIP_PERSISTED_SST_ANOMALIES                    = -1 # Persisted SST anomalies
-    NAMIP_PWCB_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE     =  1 # Use PWCB intepolation for SSTs, diagnose sea-ice
-    NAMIP_LINEAR_INTERPOLATE_SSTS_AND_SEA_ICE        =  2 # Use linear interpolation for SSTs and sea-ice (assumes pre-processing of monthly SSTs)
-    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_MONTHLY      =  3 # Use PWCB interpolation for SSTs and sea-ice equals supplied monthly value
-    NAMIP_PWCB_INTERPOLATE_SSTS_AND_SEA_ICE          =  4 # Use PWCB interpolation for SSTs and sea-ice
-    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY =  5 # Use PWCB interpolation for SSTs, sea-ice and salinity
-    NAMIP_JMC_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE      = 11 # Use JMc interpolation for SSTs, diagnose sea-ice
-    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_MONTHLY       = 13 # Use JMc interpolation for SSTs and sea-ice equals supplied monthly
-    NAMIP_JMC_INTERPOLATE_SSTS_AND_SEA_ICE           = 14 # Use JMc interpolation for SSTs and sea-ice
-    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY  = 15 # Use JMc interpolation for SSTs, sea-ice and salinity
-    NAMIP_AMIP_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE     = 21 # Use approx linear AMIP interpolation for SSTs and diagnose sea-ice
-    NAMIP_AMIP_INTERPOLATE_SSTS_AND_SEA_ICE          = 24 # Use approx linear AMIP interpolation for SSTs and sea-ice
-    NAMIP_AMIP_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = 25 # Use approx linear AMIP interpolation for SSTs, sea-ice and salinity
+
+    NAMIP_NO_INPUT_DATA = 0  # No input data
+    NAMIP_PERSISTED_SST_ANOMALIES = -1  # Persisted SST anomalies
+    NAMIP_PWCB_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
+        1  # Use PWCB intepolation for SSTs, diagnose sea-ice
+    )
+    NAMIP_LINEAR_INTERPOLATE_SSTS_AND_SEA_ICE = 2  # Use linear interpolation for SSTs and sea-ice (assumes pre-processing of monthly SSTs)
+    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_MONTHLY = (
+        3  # Use PWCB interpolation for SSTs and sea-ice equals supplied monthly value
+    )
+    NAMIP_PWCB_INTERPOLATE_SSTS_AND_SEA_ICE = (
+        4  # Use PWCB interpolation for SSTs and sea-ice
+    )
+    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
+        5  # Use PWCB interpolation for SSTs, sea-ice and salinity
+    )
+    NAMIP_JMC_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
+        11  # Use JMc interpolation for SSTs, diagnose sea-ice
+    )
+    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_MONTHLY = (
+        13  # Use JMc interpolation for SSTs and sea-ice equals supplied monthly
+    )
+    NAMIP_JMC_INTERPOLATE_SSTS_AND_SEA_ICE = (
+        14  # Use JMc interpolation for SSTs and sea-ice
+    )
+    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
+        15  # Use JMc interpolation for SSTs, sea-ice and salinity
+    )
+    NAMIP_AMIP_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
+        21  # Use approx linear AMIP interpolation for SSTs and diagnose sea-ice
+    )
+    NAMIP_AMIP_INTERPOLATE_SSTS_AND_SEA_ICE = (
+        24  # Use approx linear AMIP interpolation for SSTs and sea-ice
+    )
+    NAMIP_AMIP_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
+        25  # Use approx linear AMIP interpolation for SSTs, sea-ice and salinity
+    )
+
 
 class GlobpeaHelmholtzMethod(IntEnum):
     """Versions of D'Azevedo method to use in solving the Helmholtz equation."""
-    HELMMETH_DAZEVEDO_1 = 0 # !
+
+    HELMMETH_DAZEVEDO_1 = 0  # !
     HELMMETH_DAZEVEDO_STANDARD = 1
 
-def GlobpeaGridresRecommendedTimestep(gridres: int) -> int:
-    if gridres >= 60000:
+
+def GlobpeaGridresRecommendedTimestep(
+    gridres_km: float,
+) -> int:  # pylint: disable=too-complex
+    if gridres_km >= 60:
         return 900
-    if gridres >= 45000:
+    if gridres_km >= 45:
         return 720
-    if gridres >= 36000:
+    if gridres_km >= 36:
         return 600
-    if gridres >= 30000:
+    if gridres_km >= 30:
         return 360
-    if gridres >= 18000:
+    if gridres_km >= 18:
         return 300
-    if gridres >= 15000:
+    if gridres_km >= 15:
         return 240
-    if gridres >= 12000:
+    if gridres_km >= 12:
         return 180
-    if gridres >= 9000:
+    if gridres_km >= 9:
         return 120
-    if gridres >= 6000:
+    if gridres_km >= 6:
         return 90
-    if gridres >= 5000:
+    if gridres_km >= 5:
         return 80
-    if gridres >= 4000:
+    if gridres_km >= 4:
         return 60
-    if gridres >= 3000:
+    if gridres_km >= 3:
         return 40
-    if gridres >= 1000:
+    if gridres_km >= 1:
         return 20
-    if gridres >= 500:
+    if gridres_km >= 0.5:
         return 10
-    if gridres >= 200:
+    if gridres_km >= 0.2:
         return 4
-    if gridres >= 100:
+    if gridres_km >= 0.1:
         return 2
-    raise ValueError(f"Grid resolution of {gridres} is too small.")
+    raise ValueError(f"Grid resolution of {gridres_km}km is too small.")
+
 
 class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
     """&cardin section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/"""
@@ -152,25 +199,24 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
         description="Start date of simulation in YYYYMMDD format.",
     )
 
-    @field_serializer('kdate_s')
+    @field_serializer("kdate_s")
     def serialize_kdate_s(self, dt: date) -> str:
-        return dt.strftime('%Y%m%d')
+        return dt.strftime("%Y%m%d")
 
     ktime_s: time = Field(
         default=time(0, 0),
         description="Start time of simulation in ZZmm format.",
     )
 
-    @field_serializer('ktime_s')
+    @field_serializer("ktime_s")
     def serialize_ktime_s(self, t: time) -> str:
-        return t.strftime('%H%M')
+        return t.strftime("%H%M")
 
     leap: GlobpeaLeapMode = Field(
         default=GlobpeaLeapMode.NO_LEAP,
         description="To use leap years (LEAP) or to use 365-day calendar (NO_LEAP).",
     )
 
-    # TODO: something should be calculating this from the grid resolution, but perhaps at a higher level
     dt: float = Field(
         # These are the same constraints as enforced by globpea; see https://github.com/csiro/ccam-ccam/blob/b09005f35f53ddedb23f671beb64364143f65acb/main/general/config_m.f90#L412
         gt=0,
@@ -184,7 +230,7 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
         description="Standard output period in time-steps.",
     )
 
-    @field_serializer('nwt', mode='plain')
+    @field_serializer("nwt", mode="plain")
     def serialize_nwt(self, nwt: Optional[int]) -> int:
         """Globpea treats the -99 value as meaning 24 hours, i.e. daily output."""
         return -99 if nwt is None else nwt
@@ -281,6 +327,10 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
         default=None,
         description="Controls strength of horizontal diffusion at different vertical levels.",
     )
+    mh_bs: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
     nhorjlm: Optional[GlobpeaHorizontalDiffusion] = Field(
         default=None,
         description="Method used for horizontal diffusion (nhorjlm=0 for Smagorinsky, nhorjlm=1 for deformation, nhorjlm=3 for Smag+TKE).",
@@ -326,12 +376,12 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
     )
     mbd_maxscale: Optional[int] = Field(
         default=None,
-        gt=0, # Must be >0 when mbd is not 0
+        gt=0,  # Must be >0 when mbd is not 0
         description="Overrides mbd to limit the maximum length in kilometres. Default value set to 3000 km.",
     )
     mbd_maxgrid: Optional[int] = Field(
         default=None,
-        gt=0, # Must be >0 when mbd is not 0
+        gt=0,  # Must be >0 when mbd is not 0
         description="Overrides mbd to limit the maximum length in grid points, instead of width of the front panel.",
     )
     mbd_mlo: Optional[int] = Field(
@@ -341,12 +391,12 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
     )
     mbd_maxscale_mlo: Optional[int] = Field(
         default=None,
-        gt=0, # Must be >0 when mbd_mlo is not 0
+        gt=0,  # Must be >0 when mbd_mlo is not 0
         description="Same as mbd_maxscale, but applied to the ocean model.",
     )
     mbd_maxgrid_mlo: Optional[int] = Field(
         default=None,
-        gt=0, # Must be >0 when mbd_mlo is not 0
+        gt=0,  # Must be >0 when mbd_mlo is not 0
         description="Same as mbd_maxgrid, but applied to the ocean model.",
     )
     # TODO: is this still used as described? see ccam-ccam/main/file/nesting.f90
@@ -503,6 +553,14 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
         default=None,
         description="Modifies soil behaviour with nsib=3 or nsib=5 to essentially increase the heat capacity. Not recommended for nrad=5.",
     )
+    qgmin: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    nmr: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
     # TODO
     jalbfix: Optional[int] = Field(
         default=None,
@@ -521,6 +579,10 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
         default=None,
         description="Specifies aerosol model. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/iaero/ for further details.",
     )
+    ch_dust: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
 
     # aboundary layer turbulent mixing
 
@@ -538,6 +600,10 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
     # Station output
 
     # TODO
+    mstn: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
     nstn: Optional[int] = Field(
         default=None,
         description="Number of output stations.",
@@ -580,6 +646,29 @@ class GlobpeaNamelistConfigCardin(CCAMBaseConfig):
         default=None,
         description="Output file precision (0=short, 1=float). Using hp_output=0 for short precision can halve the file size.",
     )
+
+    # Duplicated in Turbnml. TODO: work out where they truly belong
+    ngwd: Optional[int] = Field(
+        default=None,
+        description="Coefficient to limit launching height.",
+    )
+    helim: Optional[float] = Field(
+        default=None,
+        description="Maximum launching height.",
+    )
+    fc2: Optional[float] = Field(
+        default=None,
+        description="Coefficient for calculating Froude number.",
+    )
+    sigbot_gwd: Optional[float] = Field(
+        default=None,
+        description="Lowest sigma level for gravity wave drag.",
+    )
+    alphaj: Optional[float] = Field(
+        default=None,
+        description="Coefficient for Chouinard et al model.",
+    )
+
 
 class GlobpeaNamelistConfigSkyin(CCAMBaseConfig):
     """&skyin section of globpea config namelist. Options to modify the behaviour of radiation and aerosols."""
@@ -685,193 +774,238 @@ class GlobpeaNamelistConfigSkyin(CCAMBaseConfig):
     )
 
 
-
 class GlobpeaNamelistConfigDatafile(CCAMBaseConfig):
     """&datafile section of globpea config namelist. Specify input and output filenames."""
 
     # Initial conditions and output
 
-    # TODO: set correct data types, defaults etc.
-
-    # TODO
-    ifile: Optional[int] = Field(
+    ifile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Initial conditions in conformal cubic format.  Missing data can be diagnosed under some circumstances (e.g., soil temperatures).",
+        ),
+        Input,
+    ]
+    surf_00: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Optional input to replace soil data in conformal cubic format (overwrites soil data from ifile).  Typically used in NWP applications to use soil data from previous forecast.",
+        ),
+        Input,
+    ]
+    ofile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Output history file in conformal cubic format.  Can be used as a restart file, although data is compressed.",
+        ),
+        Output,
+    ]
+    restfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Output restart file in conformal cubic format.  Saves model prognostic variables without compression for a subsequent restart.  Typically used at the end of each simulation month.",
+        ),
+        Output,
+    ]
+    surfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="High frequency output file in conformal cubic format.  Saves model output for uas, vas, tas, ps, rnd and rnc.  Typically used to save model output every time-step.",
+        ),
+        Output,
+    ]
+    save_aerosols: Optional[bool] = Field(
         default=None,
-        description="Initial conditions in conformal cubic format.  Missing data can be diagnosed under some circumstances (e.g., soil temperatures).",
+        description="True to save various aerosol values.",
     )
-    # TODO
-    surf_00: Optional[int] = Field(
+    save_pbl: Optional[bool] = Field(
         default=None,
-        description="Optional input to replace soil data in conformal cubic format (overwrites soil data from ifile).  Typically used in NWP applications to use soil data from previous forecast.",
+        description="True to save pbl information.",
     )
-    # TODO
-    ofile: Optional[int] = Field(
+    save_cloud: Optional[bool] = Field(
         default=None,
-        description="Output history file in conformal cubic format.  Can be used as a restart file, although data is compressed.",
+        description="True to save cloud information (lo,mid,hi, …).",
     )
-    # TODO
-    restfile: Optional[int] = Field(
+    save_land: Optional[bool] = Field(
         default=None,
-        description="Output restart file in conformal cubic format.  Saves model prognostic variables without compression for a subsequent restart.  Typically used at the end of each simulation month.",
+        description="True to save information about land surface.",
     )
-    # TODO
-    surfile: Optional[int] = Field(
+    save_maxmin: Optional[bool] = Field(
         default=None,
-        description="High frequency output file in conformal cubic format.  Saves model output for uas, vas, tas, ps, rnd and rnc.  Typically used to save model output every time-step.",
+        description="True to save daily maximum/minimum values (such as tas, rnd24).",
     )
-    # TODO
-    save_aerosols: Optional[int] = Field(
+    save_ocean: Optional[bool] = Field(
         default=None,
-        description="T to save various aerosol values.",
+        description="True to save ocean information.",
     )
-    # TODO
-    save_pbl: Optional[int] = Field(
+    save_radiation: Optional[bool] = Field(
         default=None,
-        description="T to save pbl information.",
+        description="True to save radiation parameters.",
     )
-    # TODO
-    save_cloud: Optional[int] = Field(
+    save_urban: Optional[bool] = Field(
         default=None,
-        description="T to save cloud information (lo,mid,hi, …).",
+        description="True to save urban scheme values.",
     )
-    # TODO
-    save_land: Optional[int] = Field(
+    save_carbon: Optional[bool] = Field(
         default=None,
-        description="T to save information about land surface.",
+        description="True to save parameters related to the land surface carbon scheme.",
     )
-    # TODO
-    save_maxmin: Optional[int] = Field(
+    save_river: Optional[bool] = Field(
         default=None,
-        description="T to save daily maximum/minimum values (such as tas, rnd24).",
-    )
-    # TODO
-    save_ocean: Optional[int] = Field(
-        default=None,
-        description="T to save ocean information.",
-    )
-    # TODO
-    save_radiation: Optional[int] = Field(
-        default=None,
-        description="T to save radiation parameters.",
-    )
-    # TODO
-    save_urban: Optional[int] = Field(
-        default=None,
-        description="T to save urban scheme values.",
-    )
-    # TODO
-    save_carbon: Optional[int] = Field(
-        default=None,
-        description="T to save parameters related to the land surface carbon scheme.",
-    )
-    # TODO
-    save_river: Optional[int] = Field(
-        default=None,
-        description="T to save river flow information.",
+        description="True to save river flow information.",
     )
 
     # Nudging and Sea Surface Temperature data
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    mesonest: Optional[int] = Field(
-        default=None,
-        description="Host dataset for nudging in conformal cubic format.",
-    )
-    # TODO
-    sstfile: Optional[int] = Field(
-        default=None,
-        description="Monthly Sea Surface Temperature and Sea Ice.  Typically used for AMIP style experiments.",
-    )
+    mesonest: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Host dataset for nudging in conformal cubic format.",
+        ),
+        Input,
+    ]
+    sstfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Monthly Sea Surface Temperature and Sea Ice.  Typically used for AMIP style experiments.",
+        ),
+        Input,
+    ]
 
     # Vertical level data
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    eigenv: Optional[int] = Field(
-        default=None,
-        description="Specifies vertical levels.  CCAM recomputes eigenvectors are run-time.",
-    )
+    eigenv: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies vertical levels.  CCAM recomputes eigenvectors are run-time.",
+        ),
+        Input,
+    ]
 
     # Topography files
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    topofile: Optional[int] = Field(
-        default=None,
-        description="Specifies surface geopotential height, land-sea mask and standard deviation of sub-grid orography heights.",
-    )
-    # TODO
-    vegprev: Optional[int] = Field(
-        default=None,
-        description="Optional input for specifying vegetation data for the previous month into the past for interpolation.",
-    )
-    # TODO
-    vegfile: Optional[int] = Field(
-        default=None,
-        description="Specified vegetation data for the current month, including vegetation type, Leaf Area Index, soil texture, albedo, urban fraction and urban type.  Also optionally includes Plant Functional Type configuration data and urban category configuration data.",
-    )
-    # TODO
-    vegnext: Optional[int] = Field(
-        default=None,
-        description="Optional input for specifying vegetation data for the next month into the future for interpolation.",
-    )
-    # TODO
-    vegnext2: Optional[int] = Field(
-        default=None,
-        description="Optional input for specifying vegetation data for the next two months into the future for interpolation.",
-    )
-    # TODO
-    bathfile: Optional[int] = Field(
-        default=None,
-        description="Optional input for specifying bathymetry and river routing data.",
-    )
+    topofile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies surface geopotential height, land-sea mask and standard deviation of sub-grid orography heights.",
+        ),
+        Input,
+    ]
+    vegprev: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Optional input for specifying vegetation data for the previous month into the past for interpolation.",
+        ),
+        Input,
+    ]
+    vegfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specified vegetation data for the current month, including vegetation type, Leaf Area Index, soil texture, albedo, urban fraction and urban type.  Also optionally includes Plant Functional Type configuration data and urban category configuration data.",
+        ),
+        Input,
+    ]
+    vegnext: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Optional input for specifying vegetation data for the next month into the future for interpolation.",
+        ),
+        Input,
+    ]
+    vegnext2: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Optional input for specifying vegetation data for the next two months into the future for interpolation.",
+        ),
+        Input,
+    ]
+    bathfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Optional input for specifying bathymetry and river routing data.",
+        ),
+        Input,
+    ]
 
     # Radiation files
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    radfile: Optional[int] = Field(
-        default=None,
-        description="Specifies greenhouse gas concentrations.",
-    )
-    # TODO
-    o3file: Optional[int] = Field(
-        default=None,
-        description="Specifies ozone concentrations.",
-    )
-    # TODO
-    cnsdir: Optional[int] = Field(
-        default=None,
-        description="Specifies location of radiation datafiles.",
-    )
+    radfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies greenhouse gas concentrations.",
+        ),
+        Input,
+    ]
+    o3file: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies ozone concentrations.",
+        ),
+        Input,
+    ]
+    cnsdir: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies location of radiation datafiles.",
+        ),
+        Input,
+    ]
 
     # Aerosol files
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    so4tfile: Optional[int] = Field(
-        default=None,
-        description="For prognostic aerosols (iaero=2 or iaero=-2), specifies the aerosol emission data.  For prescribed aerosols (iaero=1), specifies the SO4 burden.",
-    )
-    # TODO
-    oxidantfile: Optional[int] = Field(
-        default=None,
-        description="Specifies oxidant concentrations for the prognostic aerosol scheme.",
-    )
+    so4tfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="For prognostic aerosols (iaero=2 or iaero=-2), specifies the aerosol emission data.  For prescribed aerosols (iaero=1), specifies the SO4 burden.",
+        ),
+        Input,
+    ]
+    oxidantfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies oxidant concentrations for the prognostic aerosol scheme.",
+        ),
+        Input,
+    ]
 
     # Carbon cycle files
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    casafile: Optional[int] = Field(
-        default=None,
-        description="Emission data for the carbon cycle model.",
-    )
-    # TODO
-    phenfile: Optional[int] = Field(
-        default=None,
-        description="Specifies plant phenology data for the CASA carbon cycle model.",
-    )
+    casafile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Emission data for the carbon cycle model.",
+        ),
+        Input,
+    ]
+    phenfile: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Specifies plant phenology data for the CASA carbon cycle model.",
+        ),
+        Input,
+    ]
+
 
 class GlobpeaNamelistConfigKuo(CCAMBaseConfig):
     """&kuonml section of globpea config namelist. Options to modify convection and cloud microphysics."""
@@ -899,39 +1033,174 @@ class GlobpeaNamelistConfigKuo(CCAMBaseConfig):
         description="1,2,3,4,5,11,22,33,55 for different snow fall speed.",
     )
 
+    sig_ct: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    rhcv: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    rhmois: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    convfact: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    convtime: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    alflnd: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    alfsea: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    fldown: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    iterconv: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    ncvcloud: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    nevapcc: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    nuvconv: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    mbase: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    mdelay: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    methprec: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    nbase: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    detrain: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    entrain: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    methdetr: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    detrainx: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    dsig2: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    dsig4: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    ksc: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    kscsea: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    sigkscb: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    sigksct: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    tied_con: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    tied_over: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    nclddia: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    nstab_cld: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    nrhcrit: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    sigcll: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    nevapls: Optional[int] = Field(
+        default=None,
+        description="TODO",
+    )
+    acon: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+    bcon: Optional[float] = Field(
+        default=None,
+        description="TODO",
+    )
+
+
 class GlobpeaNamelistConfigTurb(CCAMBaseConfig):
     """&turbnml section of globpea config namelist. Options to modify boundary layer turbulent mixing and gravity wave drag."""
 
     # Gravity wave drag
-    # TODO: set correct data types, defaults etc.
-    # TODO
     ngwd: Optional[int] = Field(
         default=None,
         description="Coefficient to limit launching height.",
     )
-    # TODO
-    helim: Optional[int] = Field(
+    helim: Optional[float] = Field(
         default=None,
         description="Maximum launching height.",
     )
-    # TODO
-    fc2: Optional[int] = Field(
+    fc2: Optional[float] = Field(
         default=None,
         description="Coefficient for calculating Froude number.",
     )
-    # TODO
-    sigbot_gwd: Optional[int] = Field(
+    sigbot_gwd: Optional[float] = Field(
         default=None,
         description="Lowest sigma level for gravity wave drag.",
     )
-    # TODO
-    alphaj: Optional[int] = Field(
+    alphaj: Optional[float] = Field(
         default=None,
         description="Coefficient for Chouinard et al model.",
     )
 
     # Boundary layer eddy diffusivity
-    # TODO: set correct data types, defaults etc.
 
     # TODO
     buoymeth: Optional[int] = Field(
@@ -963,8 +1232,7 @@ class GlobpeaNamelistConfigTurb(CCAMBaseConfig):
         default=None,
         description="Minimum value of turbulent kinetic energy.",
     )
-    # TODO
-    mineps: Optional[int] = Field(
+    mineps: Optional[float] = Field(
         default=None,
         description="Minimum value of eddy dissipation.",
     )
@@ -1008,8 +1276,10 @@ class GlobpeaNamelistConfigTurb(CCAMBaseConfig):
         description="Critical mixing ratio for liquid water before autoconversion.",
     )
 
+
 class GlobpeaNamelistConfigLand(CCAMBaseConfig):
     """&landnml section of globpea config namelist. Options to modify land-surface, urban and carbon cycle."""
+
     # TODO: set correct data types, defaults etc.
     # TODO
     proglai: Optional[int] = Field(
@@ -1021,6 +1291,7 @@ class GlobpeaNamelistConfigLand(CCAMBaseConfig):
         default=None,
         description="Carbon cycle model.  ccycle=0 for off and ccycle=3 for C-N-P cycle.",
     )
+
 
 class GlobpeaNamelistConfigMlo(CCAMBaseConfig):
     """&mlonml section of globpea config namelist. Options to modify oceans, lakes, rivers and sea-ice."""
@@ -1103,25 +1374,39 @@ class GlobpeaNamelistConfigMlo(CCAMBaseConfig):
         description="River routing roughness coefficient.",
     )
 
+
 class GlobpeaNamelistConfigTrfiles(CCAMBaseConfig):
     """&trfiles section of globpea config namelist. Options for specifying user-defined tracers."""
-    tracerlist: Optional[Path] = Field(
-        default=None,
-        description="Input tracer configuration file. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/trfiles-tracers/tracerlist/ for more details.",
-    )
 
-class GlobpeaNamelistConfig(CCAMBaseConfig):
+    tracerlist: Annotated[
+        Optional[Path],
+        Field(
+            default=None,
+            description="Input tracer configuration file. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/trfiles-tracers/tracerlist/ for more details.",
+        ),
+        Input,
+    ]
+
+
+class GlobpeaNamelistConfig(NMLConfig):
     """Configuration for the globpea executable's configuration namelist."""
-    defaults: GlobpeaNamelistConfigDefaults
-    cardin: GlobpeaNamelistConfigCardin
-    skyin: GlobpeaNamelistConfigSkyin
-    datafile: GlobpeaNamelistConfigDatafile
-    kuonml: GlobpeaNamelistConfigKuo
-    turbnml: GlobpeaNamelistConfigTurb
-    landnml: GlobpeaNamelistConfigLand
-    mlonml: GlobpeaNamelistConfigMlo
-    trfiles: GlobpeaNamelistConfigTrfiles
+
+    # Change the default of nml_path, inherited from NMLConfig, to 'input', which is globpea's default
+    nml_path: Optional[Path] = Path("input")
+
+    defaults: Optional[GlobpeaNamelistConfigDefaults] = None
+    cardin: Optional[GlobpeaNamelistConfigCardin] = None
+    skyin: Optional[GlobpeaNamelistConfigSkyin] = None
+    datafile: Optional[GlobpeaNamelistConfigDatafile] = None
+    kuonml: Optional[GlobpeaNamelistConfigKuo] = None
+    turbnml: Optional[GlobpeaNamelistConfigTurb] = None
+    landnml: Optional[GlobpeaNamelistConfigLand] = None
+    mlonml: Optional[GlobpeaNamelistConfigMlo] = None
+    trfiles: Optional[GlobpeaNamelistConfigTrfiles] = None
+
 
 class GlobpeaConfig(CCAMBaseConfig):
-    """Configuration for the globpea executable, the main CCAM model."""
+    """Configuration for the globpea executable, the main CCAM model.
+    Global Prognostic Equations version A"""
+
     input: GlobpeaNamelistConfig
