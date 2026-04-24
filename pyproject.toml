@@ -18,7 +18,8 @@ classifiers = [
 license = {text = "Apache Software License 2.0"}
 dependencies = [
   "rompy",
-  "typer"
+  "typer",
+  "f90nml"
 ]
 
 dynamic = ["version"]
