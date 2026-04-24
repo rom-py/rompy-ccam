@@ -93,6 +93,8 @@ class CCAMBaseConfig(BaseConfig):
 
     model_config = ConfigDict(extra="forbid")
 
+    workflow_step_description: Optional[str] = None
+
     @classmethod
     def fields_satisfying(cls, p: Callable[[FieldInfo], bool]) -> list[str]:
         """Return the names of fields which satisfy this predicate on their info."""
@@ -214,6 +216,17 @@ class CCAMBaseConfig(BaseConfig):
 
     def __radd__(self, other: Self) -> Self:
         return self.after(other)
+
+    def __str__(self) -> str:
+        return (
+            f"CCAM workflow step: {type(self).__name__}"
+            + (
+                f"<{self.workflow_step_description}>"
+                if self.workflow_step_description is not None
+                else ""
+            )
+            + f" (consumes {frozenset_format_as_file_list(self.input_files)}; produces {frozenset_format_as_file_list(self.output_files)})"
+        )
 
 
 class NullConfig(CCAMBaseConfig):
