@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Tuple,
     Annotated,
+    Literal,
 )
 
 if sys.version_info >= (3, 11):
@@ -22,10 +23,10 @@ from operator import or_
 
 
 import f90nml
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, BaseModel
 from pydantic.fields import FieldInfo
 
-from rompy.core.config import BaseConfig
+from rompy.core.config import BaseConfig, RompyBaseModel
 
 
 def type_is_optional(t: type[Any]) -> Callable[[type[Any]], bool]:
@@ -88,134 +89,43 @@ def frozenset_format_as_file_list(s: frozenset[Path]) -> str:
     return "nothing" if not s else ", ".join(str(p) for p in sorted(s, key=str))
 
 
+def fields_satisfying(cls: BaseModel, p: Callable[[FieldInfo], bool]) -> list[str]:
+    """Return the names of fields which satisfy this predicate on their info."""
+    return [
+        field_name
+        for field_name, model_field in cls.model_fields.items()
+        if p(model_field)
+    ]
+
+
+def fields_with_type_satisfying(
+    cls: BaseModel, p: Callable[[type[Any]], bool]
+) -> list[str]:
+    """Return the names of fields which satisfy this predicate on their annotated type."""
+    return fields_satisfying(cls, field_type_satisfies(p))
+
+
+def fields_of_type(cls: BaseModel, t: type[Any]) -> list[str]:
+    """
+    Return the names of fields in this model of type t.
+    Note that this won't work for more complex types such as Optional[Path]; for that, use fields_satisfying(type_is_optional(Path)).
+    """
+    return fields_with_type_satisfying(cls, lambda f: f is t)
+
+
 class CCAMBaseConfig(BaseConfig):
     """Base configuration for all CCAM models."""
+
+    template: Optional[str] = None
+    checkout: Optional[str] = None
 
     model_config = ConfigDict(extra="forbid")
 
     workflow_step_description: Optional[str] = None
 
-    @classmethod
-    def fields_satisfying(cls, p: Callable[[FieldInfo], bool]) -> list[str]:
-        """Return the names of fields which satisfy this predicate on their info."""
-        return [
-            field_name
-            for field_name, model_field in cls.model_fields.items()
-            if p(model_field)
-        ]
-
-    @classmethod
-    def fields_with_type_satisfying(cls, p: Callable[[type[Any]], bool]) -> list[str]:
-        """Return the names of fields which satisfy this predicate on their annotated type."""
-        return cls.fields_satisfying(field_type_satisfies(p))
-
-    @classmethod
-    def fields_of_type(cls, t: type[Any]) -> list[str]:
-        """
-        Return the names of fields in this model of type t.
-        Note that this won't work for more complex types such as Optional[Path]; for that, use fields_satisfying(type_is_optional(Path)).
-        """
-        return cls.fields_with_type_satisfying(lambda f: f is t)
-
-    @property
-    def input_files(self) -> frozenset[Path]:
-        """What files does this config expect to be present in the filesystem when it runs?"""
-        return frozenset().union(
-            # All fields of type Path marked as Input
-            [
-                getattr(self, field_name)
-                for field_name in self.fields_satisfying(
-                    field_is_type_with_tag(Path, Input)
-                )
-            ],
-            # All fields of type Optional[Path] tagged as Input whose value is not None
-            [
-                field_value
-                for field in self.fields_satisfying(
-                    field_is_optional_type_with_tag(Path, Input)
-                )
-                if (field_value := getattr(self, field)) is not None
-            ],
-            # Input files of all fields which are a subclass of CCAMBaseConfig
-            frozenset_list_union(
-                [
-                    getattr(self, field).input_files
-                    for field in self.fields_with_type_satisfying(
-                        type_is_subclass(CCAMBaseConfig)
-                    )
-                ]
-            ),
-            # Input files of all fields which are an Optional[subclass of CCAMBaseConfig] and are not None
-            frozenset_list_union(
-                [
-                    field_value.input_files
-                    for field in self.fields_with_type_satisfying(
-                        type_is_optional_subclass(CCAMBaseConfig)
-                    )
-                    if (field_value := getattr(self, field)) is not None
-                ]
-            ),
-        )
-
-    @property
-    def output_files(self) -> frozenset[Path]:
-        """What files does running this config produce?"""
-        return frozenset().union(
-            # All fields of type Path marked as Output
-            [
-                getattr(self, field_name)
-                for field_name in self.fields_satisfying(
-                    field_is_type_with_tag(Path, Output)
-                )
-            ],
-            # All fields of type Optional[Path] tagged as Output whose value is not None
-            [
-                field_value
-                for field in self.fields_satisfying(
-                    field_is_optional_type_with_tag(Path, Output)
-                )
-                if (field_value := getattr(self, field)) is not None
-            ],
-            # Output files of all fields which are a subclass of CCAMBaseConfig
-            frozenset_list_union(
-                [
-                    getattr(self, field).output_files
-                    for field in self.fields_with_type_satisfying(
-                        type_is_subclass(CCAMBaseConfig)
-                    )
-                ]
-            ),
-            # Output files of all fields which are an Optional[subclass of CCAMBaseConfig] and are not None
-            frozenset_list_union(
-                [
-                    field_value.output_files
-                    for field in self.fields_with_type_satisfying(
-                        type_is_optional_subclass(CCAMBaseConfig)
-                    )
-                    if (field_value := getattr(self, field)) is not None
-                ]
-            ),
-        )
-
-    def before(self, next: Self) -> Self:
-        if isinstance(self, NullConfig):
-            return next
-        if isinstance(next, NullConfig):
-            return self
-        return ComposedConfig(self, next)
-
-    def __add__(self, other: Self) -> Self:
-        return self.before(other)
-
-    def after(self, previous: Self) -> Self:
-        if isinstance(self, NullConfig):
-            return previous
-        if isinstance(previous, NullConfig):
-            return self
-        return ComposedConfig(previous, self)
-
-    def __radd__(self, other: Self) -> Self:
-        return self.after(other)
+    def render(self, context: dict, output_dir: Path | str):
+        """Override parent class render(), as we're not using templates."""
+        pass
 
     def __str__(self) -> str:
         return (
@@ -227,16 +137,6 @@ class CCAMBaseConfig(BaseConfig):
             )
             + f" (consumes {frozenset_format_as_file_list(self.input_files)}; produces {frozenset_format_as_file_list(self.output_files)})"
         )
-
-
-class NullConfig(CCAMBaseConfig):
-    """Represents a process which does nothing; consumes no inputs and produces no outputs."""
-
-    def __repr__(self) -> str:
-        return "NullConfig()"
-
-
-NULL_CONFIG = NullConfig()
 
 
 def nml_prepare_dict(d: dict) -> dict:
@@ -275,7 +175,123 @@ class _Output:
 Output = _Output()
 
 
-class NMLConfig(CCAMBaseConfig):
+class FileInputConfig(RompyBaseModel):
+    """A class which can list its input files."""
+
+    @property
+    def input_files(self) -> frozenset[Path]:
+        return frozenset()
+
+
+class FileInputConfigAuto(FileInputConfig, RompyBaseModel):
+    """A class which automatically lists its input files by traversing its pydantic model."""
+
+    @property
+    def input_files(self) -> frozenset[Path]:
+        """What files does this config expect to be present in the filesystem when it runs?"""
+        return frozenset().union(
+            # All fields of type Path marked as Input
+            [
+                getattr(self, field_name)
+                for field_name in fields_satisfying(
+                    self, field_is_type_with_tag(Path, Input)
+                )
+            ],
+            # All fields of type Optional[Path] tagged as Input whose value is not None
+            [
+                field_value
+                for field in fields_satisfying(
+                    self, field_is_optional_type_with_tag(Path, Input)
+                )
+                if (field_value := getattr(self, field)) is not None
+            ],
+            # Input files of all fields which are a subclass of FileInputConfig
+            frozenset_list_union(
+                [
+                    getattr(self, field).input_files
+                    for field in fields_with_type_satisfying(
+                        self, type_is_subclass(FileInputConfig)
+                    )
+                ]
+            ),
+            # Input files of all fields which are an Optional[subclass of FileInputConfig] and are not None
+            frozenset_list_union(
+                [
+                    field_value.input_files
+                    for field in fields_with_type_satisfying(
+                        self, type_is_optional_subclass(FileInputConfig)
+                    )
+                    if (field_value := getattr(self, field)) is not None
+                ]
+            ),
+        )
+
+
+class FileOutputConfig(RompyBaseModel):
+    """A class which can list its output files."""
+
+    @property
+    def output_files(self) -> frozenset[Path]:
+        return frozenset()
+
+
+class FileOutputConfigAuto(FileOutputConfig, RompyBaseModel):
+    """A class which automatically lists its output files by traversing its pydantic model."""
+
+    @property
+    def output_files(self) -> frozenset[Path]:
+        """What files does running this config produce?"""
+        return frozenset().union(
+            # All fields of type Path marked as Output
+            [
+                getattr(self, field_name)
+                for field_name in fields_satisfying(
+                    self, field_is_type_with_tag(Path, Output)
+                )
+            ],
+            # All fields of type Optional[Path] tagged as Output whose value is not None
+            [
+                field_value
+                for field in fields_satisfying(
+                    self, field_is_optional_type_with_tag(Path, Output)
+                )
+                if (field_value := getattr(self, field)) is not None
+            ],
+            # Output files of all fields which are a subclass of FileOutputConfig
+            frozenset_list_union(
+                [
+                    getattr(self, field).output_files
+                    for field in fields_with_type_satisfying(
+                        self, type_is_subclass(FileOutputConfig)
+                    )
+                ]
+            ),
+            # Output files of all fields which are an Optional[subclass of FileOutputConfig] and are not None
+            frozenset_list_union(
+                [
+                    field_value.output_files
+                    for field in fields_with_type_satisfying(
+                        self, type_is_optional_subclass(FileOutputConfig)
+                    )
+                    if (field_value := getattr(self, field)) is not None
+                ]
+            ),
+        )
+
+
+class FileIOConfig(FileInputConfig, FileOutputConfig):
+    """Inherit from this if your config class represents a process which takes input files and produces output files."""
+
+    pass
+
+
+class FileIOConfigAuto(FileInputConfigAuto, FileOutputConfigAuto):
+    """Inherit from this to automatically find input and output files your config class consumes and produces."""
+
+    pass
+
+
+class NMLConfig(BaseModel):
     """A config that is intended to be exported as a namelist (.nml) file."""
 
     nml_path: Annotated[
@@ -308,12 +324,33 @@ class NMLConfig(CCAMBaseConfig):
         f90nml.write(nml, self.nml_path, force=force, sort=sort),
 
 
-@dataclass(frozen=True)
-class ComposedConfig(CCAMBaseConfig):
-    first: CCAMBaseConfig
-    second: CCAMBaseConfig
+class NullConfig(FileIOConfig, BaseConfig):
+    """Represents a process which does nothing; consumes no inputs and produces no outputs."""
 
-    def __post_init__(self) -> None:
+    model_type: Literal["null"] = "null"
+
+    def __repr__(self) -> str:
+        return "NullConfig()"
+
+
+NULL_CONFIG = NullConfig()
+
+
+@dataclass(frozen=True)
+class ComposedConfig(FileIOConfig, BaseConfig):
+    """A config composed of two steps, `first` and `second`."""
+
+    first: FileIOConfig
+    second: FileIOConfig
+
+    model_type: Literal["composed"] = "composed"
+
+    def __init__(self, first: FileIOConfig, second: FileIOConfig) -> None:
+        # super().__init__()
+        object.__setattr__(self, "first", first)
+        object.__setattr__(self, "second", second)
+        object.__setattr__(self, "model_type", "composed")
+
         conflicting_output_files: frozenset[Path] = (
             self.first.output_files & self.second.output_files
         )
@@ -321,6 +358,26 @@ class ComposedConfig(CCAMBaseConfig):
             raise ValueError(
                 f"Different steps of workflow would create/overwrite these files: {frozenset_format_as_file_list(conflicting_output_files)}:\n***First workflow:***\n{str(self.first)}\n***Second workflow:***\n{str(self.second)}"
             )
+
+    def before(self, next: Self) -> Self:
+        if isinstance(self, NullConfig):
+            return next
+        if isinstance(next, NullConfig):
+            return self
+        return type(self)(self, next)
+
+    def __add__(self, other: Self) -> Self:
+        return self.before(other)
+
+    def after(self, previous: Self) -> Self:
+        if isinstance(self, NullConfig):
+            return previous
+        if isinstance(previous, NullConfig):
+            return self
+        return type(self)(previous, self)
+
+    def __radd__(self, other: Self) -> Self:
+        return self.after(other)
 
     @property
     def input_files(self) -> frozenset[Path]:

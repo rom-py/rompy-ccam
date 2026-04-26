@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from pydantic import Field
 
@@ -41,5 +41,7 @@ class OcnbathConfigOcn:
 
 class OcnbathConfig(CCAMBaseConfig):
     """Configuration for the ocnbath executable. To be output as a namelist file, e.g. ocnbath.nml."""
+
+    model_type: Literal["ocnbath"] = "ocnbath"
 
     ocnnml: OcnbathConfigOcn

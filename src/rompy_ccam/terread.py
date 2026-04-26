@@ -1,12 +1,12 @@
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Literal
 from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam.types import CCAMBaseConfig, NMLConfig, Input, Output
+from rompy_ccam.types import CCAMBaseConfig, NMLConfig, FileIOConfigAuto, Input, Output
 
 
-class TerreadNamelistConfigTop(CCAMBaseConfig):
+class TerreadNamelistConfigTop(FileIOConfigAuto):
     """
     &topnml section of TERREAD config namelist.
     See https://research.csiro.au/ccam/software-and-model-configuration/terread-orography/.
@@ -128,7 +128,7 @@ class TerreadNamelistConfigTop(CCAMBaseConfig):
     ]
 
 
-class TerreadNamelistConfig(NMLConfig):
+class TerreadNamelistConfig(NMLConfig, FileIOConfigAuto):
     """Configuration for the terread executable's configuration namelist (.nml)."""
 
     # nml_path is None as terread takes its namelist from stdin
@@ -136,7 +136,9 @@ class TerreadNamelistConfig(NMLConfig):
     topnml: TerreadNamelistConfigTop
 
 
-class TerreadConfig(CCAMBaseConfig):
+class TerreadConfig(CCAMBaseConfig, FileIOConfigAuto):
     """Configuration for the terread executable, used to create orography and land-sea mask data for the specified cubic grid."""
+
+    model_type: Literal["terread"] = "terread"
 
     input: TerreadNamelistConfig

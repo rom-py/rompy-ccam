@@ -44,7 +44,15 @@ docs = [
 rompy_ccam = "rompy_ccam.cli:app"
 
 [project.entry-points."rompy.config"]
-ccam = "rompy_ccam.config:Config"
+ccam = "rompy_ccam.config:CCAMConfig"
+null = "rompy_ccam.types:NullConfig"
+composed = "rompy_ccam.types:ComposedConfig"
+globpea = "rompy_ccam.globpea:GlobpeaConfig"
+terread = "rompy_ccam.terread:TerreadConfig"
+igbpveg = "rompy_ccam.igbpveg:IgbpvegConfig"
+cdfvidar = "rompy_ccam.cdfvidar:CdfvidarConfig"
+casafield = "rompy_ccam.casafield:CasafieldConfig"
+ocnbath = "rompy_ccam.ocnbath:OcnbathConfig"
 
 [project.entry-points."rompy.source"]
 # Register here any new source. For example:

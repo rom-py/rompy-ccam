@@ -1,12 +1,19 @@
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Literal
 from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam.types import CCAMBaseConfig, NMLConfig, Input, Output
+from rompy_ccam.types import (
+    CCAMBaseConfig,
+    NMLConfig,
+    FileIOConfigAuto,
+    FileIOConfigAuto,
+    Input,
+    Output,
+)
 
 
-class CdfvidarNamelistConfigG(CCAMBaseConfig):
+class CdfvidarNamelistConfigG(FileIOConfigAuto):
     """&gnml section of CDFVIDAR config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/cdfvidar-process-lat-lon-input-to-cubic/."""
 
     # TODO: set correct data types, defaults etc.
@@ -199,7 +206,7 @@ class CdfvidarNamelistConfig(NMLConfig):
     gnml: CdfvidarNamelistConfigG
 
 
-class CdfvidarConfig(CCAMBaseConfig):
+class CdfvidarConfig(CCAMBaseConfig, FileIOConfigAuto):
     """Configuration options to be given to the cdfvidar executable.
 
     Cdfvidar is used to convert GCM, reanalyses, analyses or other weather and climate data into initial conditions or mesonest host files for nudging with the conformal cubic format.
@@ -242,6 +249,8 @@ class CdfvidarConfig(CCAMBaseConfig):
     | Soil moisture (optional)                 | m3/m3           |        3D | soil_moist                             |
     +------------------------------------------+-----------------+-----------+----------------------------------------+
     """
+
+    model_type: Literal["cdfvidar"] = "cdfvidar"
 
     input: CdfvidarNamelistConfig
 

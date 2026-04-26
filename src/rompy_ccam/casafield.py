@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 
@@ -10,6 +11,8 @@ class CasafieldConfig(CCAMBaseConfig):
 
     CASAFIELD is used to create input files for the CASA-CNP carbon cycle model available with CCAM. In addition to simulating the terrestrial carbon cycle, this option also allows the CABLE land-surface scheme to run with a prognostic Leaf Area Index (LAI) and the Populations-Order-Physiology (POP) model.
     """
+
+    model_type: Literal["casafield"] = "casafield"
 
     topofile: Path = Field(
         description="Input topography file created by terread.",
