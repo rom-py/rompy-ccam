@@ -10,7 +10,9 @@ from typing import Optional, Annotated
 
 from pydantic import Field
 
-from rompy_ccam.types import CCAMBaseConfig, NMLConfig, Input, Output
+from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
+from rompy_ccam.composable_fileio_config import Input, Output
+from rompy_ccam.namelists import CCAMNamelistConfig
 
 
 class Pcc2HistType(StrEnum):
@@ -50,7 +52,7 @@ class Pcc2HistVExtrap(StrEnum):
     MISSING = "missing"  # use missing values instead of extrapolation
 
 
-class Pcc2HistNamelistConfigHistnl(CCAMBaseConfig):
+class Pcc2HistNamelistConfigHistnl(CCAMConfig):
     """&histnl section of PCC2HIST config namelist."""
 
     hnames: list[str] = Field(
@@ -67,7 +69,7 @@ class Pcc2HistNamelistConfigHistnl(CCAMBaseConfig):
     )
 
 
-class Pcc2HistNamelistConfigInput(CCAMBaseConfig):
+class Pcc2HistNamelistConfigInput(CCAMConfig):
     """&input section of PCC2HIST config namelist."""
 
     # TODO: set correct data types, defaults etc.
@@ -171,7 +173,7 @@ class Pcc2HistNamelistConfigInput(CCAMBaseConfig):
     )
 
 
-class Pcc2HistNamelistConfig(NMLConfig):
+class Pcc2HistNamelistConfig(CCAMNamelistConfig):
     """Configuration for the pcc2hist executable's configuration namelist (.nml).
     See https://research.csiro.au/ccam/software-and-model-configuration/pcc2hist-process-cubic-output-to-lat-lon/.
     """

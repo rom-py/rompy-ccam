@@ -11,18 +11,13 @@ from typing import Optional, Annotated, Literal
 
 from pydantic import Field, field_serializer
 
-from rompy.model import RompyBaseModel
-from rompy_ccam.types import (
-    CCAMBaseConfig,
-    Flag,
-    NMLConfig,
-    Input,
-    Output,
-    FileIOConfigAuto,
-)
+from rompy_ccam.types import Flag
+from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
+from rompy_ccam.namelists import CCAMNamelistConfig
+from rompy_ccam.composable_fileio_config import Input, Output
 
 
-class GlobpeaNamelistConfigDefaults(RompyBaseModel):
+class GlobpeaNamelistConfigDefaults(CCAMConfig):
     """&defaults section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/defaults-default-switch-values/"""
 
     nversion: Optional[str] = Field(
@@ -199,7 +194,7 @@ def GlobpeaGridresRecommendedTimestep(
     raise ValueError(f"Grid resolution of {gridres_km}km is too small.")
 
 
-class GlobpeaNamelistConfigCardin(FileIOConfigAuto):
+class GlobpeaNamelistConfigCardin(CCAMConfig):
     """&cardin section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/"""
 
     # Date, run length and miscellaneous
@@ -678,7 +673,7 @@ class GlobpeaNamelistConfigCardin(FileIOConfigAuto):
     )
 
 
-class GlobpeaNamelistConfigSkyin(FileIOConfigAuto):
+class GlobpeaNamelistConfigSkyin(CCAMConfig):
     """&skyin section of globpea config namelist. Options to modify the behaviour of radiation and aerosols."""
 
     # Radiation
@@ -782,7 +777,7 @@ class GlobpeaNamelistConfigSkyin(FileIOConfigAuto):
     )
 
 
-class GlobpeaNamelistConfigDatafile(FileIOConfigAuto):
+class GlobpeaNamelistConfigDatafile(CCAMConfig):
     """&datafile section of globpea config namelist. Specify input and output filenames."""
 
     # Initial conditions and output
@@ -1015,7 +1010,7 @@ class GlobpeaNamelistConfigDatafile(FileIOConfigAuto):
     ]
 
 
-class GlobpeaNamelistConfigKuo(FileIOConfigAuto):
+class GlobpeaNamelistConfigKuo(CCAMConfig):
     """&kuonml section of globpea config namelist. Options to modify convection and cloud microphysics."""
 
     # Convection
@@ -1183,7 +1178,7 @@ class GlobpeaNamelistConfigKuo(FileIOConfigAuto):
     )
 
 
-class GlobpeaNamelistConfigTurb(FileIOConfigAuto):
+class GlobpeaNamelistConfigTurb(CCAMConfig):
     """&turbnml section of globpea config namelist. Options to modify boundary layer turbulent mixing and gravity wave drag."""
 
     # Gravity wave drag
@@ -1285,7 +1280,7 @@ class GlobpeaNamelistConfigTurb(FileIOConfigAuto):
     )
 
 
-class GlobpeaNamelistConfigLand(FileIOConfigAuto):
+class GlobpeaNamelistConfigLand(CCAMConfig):
     """&landnml section of globpea config namelist. Options to modify land-surface, urban and carbon cycle."""
 
     # TODO: set correct data types, defaults etc.
@@ -1301,7 +1296,7 @@ class GlobpeaNamelistConfigLand(FileIOConfigAuto):
     )
 
 
-class GlobpeaNamelistConfigMlo(FileIOConfigAuto):
+class GlobpeaNamelistConfigMlo(CCAMConfig):
     """&mlonml section of globpea config namelist. Options to modify oceans, lakes, rivers and sea-ice."""
 
     # Ocean dynamics
@@ -1383,7 +1378,7 @@ class GlobpeaNamelistConfigMlo(FileIOConfigAuto):
     )
 
 
-class GlobpeaNamelistConfigTrfiles(FileIOConfigAuto):
+class GlobpeaNamelistConfigTrfiles(CCAMConfig):
     """&trfiles section of globpea config namelist. Options for specifying user-defined tracers."""
 
     tracerlist: Annotated[
@@ -1396,7 +1391,7 @@ class GlobpeaNamelistConfigTrfiles(FileIOConfigAuto):
     ]
 
 
-class GlobpeaNamelistConfig(NMLConfig, FileIOConfigAuto):
+class GlobpeaNamelistConfig(CCAMNamelistConfig):
     """Configuration for the globpea executable's configuration namelist."""
 
     # Change the default of nml_path, inherited from NMLConfig, to 'input', which is globpea's default
@@ -1413,7 +1408,7 @@ class GlobpeaNamelistConfig(NMLConfig, FileIOConfigAuto):
     trfiles: Optional[GlobpeaNamelistConfigTrfiles] = None
 
 
-class GlobpeaConfig(CCAMBaseConfig, FileIOConfigAuto):
+class GlobpeaConfig(CCAMBaseConfig):
     """Configuration for the globpea executable, the main CCAM model.
     Global Prognostic Equations version A"""
 

@@ -9,7 +9,9 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam.types import CCAMBaseConfig, NMLConfig, FileIOConfigAuto, Input, Output
+from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
+from rompy_ccam.composable_fileio_config import Input, Output
+from rompy_ccam.namelists import CCAMNamelistConfig
 
 
 class IgbpvegOutputMode(StrEnum):
@@ -19,7 +21,7 @@ class IgbpvegOutputMode(StrEnum):
     IGBP = "igbp"  # output indices are in terms of IGBP vegetation classes
 
 
-class IgbpvegNamelistConfigVeg(FileIOConfigAuto):
+class IgbpvegNamelistConfigVeg(CCAMConfig):
     """&vegnml section of IGBPVEG config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/igbpveg-vegetation-soil-and-urban/"""
 
     # TODO: set correct data types, defaults etc.
@@ -157,7 +159,7 @@ class IgbpvegNamelistConfigVeg(FileIOConfigAuto):
     ]
 
 
-class IgbpvegNamelistConfig(NMLConfig, FileIOConfigAuto):
+class IgbpvegNamelistConfig(CCAMNamelistConfig):
     """Configuration for the igbpveg executable. To be output as a namelist file. e.g. igbpveg.nml."""
 
     # nml_path is None as igbpveg takes its namelist from stdin
@@ -165,7 +167,7 @@ class IgbpvegNamelistConfig(NMLConfig, FileIOConfigAuto):
     vegnml: IgbpvegNamelistConfigVeg
 
 
-class IgbpvegConfig(CCAMBaseConfig, FileIOConfigAuto):
+class IgbpvegConfig(CCAMBaseConfig):
     """Configuration for the igbpveg executable, which produces land-cover datasets for CCAM with the CABLE land-surface model."""
 
     model_type: Literal["igbpveg"] = "igbpveg"

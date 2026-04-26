@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import Field
 
 # from rompy.model import ModelRun
-from rompy_ccam.types import CCAMBaseConfig
+from rompy_ccam.rompy_ccam import CCAMBaseConfig
 
 # from rompy_ccam.grid import CCAMGrid
 

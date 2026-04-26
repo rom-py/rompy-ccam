@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field
 
-from rompy_ccam.types import CCAMBaseConfig
+from rompy_ccam.rompy_ccam import CCAMBaseConfig
+from rompy_ccam.composable_fileio_config import Input, Output
 
 
 class CasafieldConfig(CCAMBaseConfig):
@@ -18,10 +19,18 @@ class CasafieldConfig(CCAMBaseConfig):
         description="Input topography file created by terread.",
     )
 
-    input: Path = Field(
-        description="The casaNP_gridinfo_1dx1d.nc file for carbon cycle emissions.",
-    )
+    input: Annotated[
+        Path,
+        Field(
+            description="The casaNP_gridinfo_1dx1d.nc file for carbon cycle emissions.",
+        ),
+        Input,
+    ]
 
-    output: Path = Field(
-        description="Output carbon cycle emissions on the cubic grid (to be read by CCAM).",
-    )
+    output: Annotated[
+        Path,
+        Field(
+            description="Output carbon cycle emissions on the cubic grid (to be read by CCAM).",
+        ),
+        Output,
+    ]
