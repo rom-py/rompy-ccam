@@ -1,7 +1,7 @@
 """Mixin for a config representing a namelist."""
 
 from typing import (
-    Any,
+    # Any,
     Optional,
     Annotated,
 )
@@ -13,26 +13,26 @@ from pydantic import Field
 from rompy_ccam import CCAMConfig, Output
 
 
-def nml_prepare_dict(d: dict) -> dict:
-    """
-    Prepare a pydantic model_dump() for export to .nml.
+# def nml_prepare_dict(d: dict) -> dict:
+#     """
+#     Prepare a pydantic model_dump() for export to .nml.
 
-    This will recursively convert any Paths to strings, and remove any fields whose optional value is None.
+#     This will recursively convert any Paths to strings, and remove any fields whose optional value is None.
 
-    This will return a new dict, with the original being unchanged.
-    """
-    n: dict[Any, Any] = {}
-    for key, value in d.items():
-        if isinstance(value, dict):
-            # Recurse into this nested dict
-            n[key] = nml_prepare_dict(value)
-        elif isinstance(value, Path):
-            # Convert this Path into a string
-            n[key] = str(value)
-        elif value is not None:
-            # Add this value to the new dict
-            n[key] = value
-    return n
+#     This will return a new dict, with the original being unchanged.
+#     """
+#     n: dict[Any, Any] = {}
+#     for key, value in d.items():
+#         if isinstance(value, dict):
+#             # Recurse into this nested dict
+#             n[key] = nml_prepare_dict(value)
+#         elif isinstance(value, Path):
+#             # Convert this Path into a string
+#             n[key] = str(value)
+#         elif value is not None:
+#             # Add this value to the new dict
+#             n[key] = value
+#     return n
 
 
 class CCAMNamelistConfig(CCAMConfig):
