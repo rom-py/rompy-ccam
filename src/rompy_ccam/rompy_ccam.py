@@ -68,7 +68,8 @@ class CCAMBaseConfig(CCAMRootConfig, BaseConfig):
                 if self.workflow_step_description is not None
                 else ""
             )
-            + f" (consumes {frozenset_format_as_file_list(self.input_files)}; produces {frozenset_format_as_file_list(self.output_files)})"
+            + f"\n    (consumes {frozenset_format_as_file_list(self.input_files)})"
+            + f"\n    (produces {frozenset_format_as_file_list(self.output_files)})"
         )
 
 
