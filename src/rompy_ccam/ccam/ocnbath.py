@@ -3,10 +3,10 @@ from typing import Annotated, Optional, Literal
 
 from pydantic import Field
 
-from rompy_ccam import CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig, Input, Output
+from rompy_ccam import CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig, Input, Output
 
 
-class OcnbathConfigOcn(CCAMConfig):
+class OcnbathConfigOcn(CCAMRootConfig):
     """&ocnnml section of OCNBATH config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/ocnbath-bathymetry-and-river-routing/."""
 
     bathout: Annotated[
@@ -55,12 +55,24 @@ class OcnbathConfigOcn(CCAMConfig):
     )
 
 
-class OcnbathConfig(CCAMBaseConfig, CCAMNamelistConfig):
+class OcnbathConfig(CCAMExeConfig, CCAMNamelistConfig):
     """Configuration for the ocnbath executable. To be output as a namelist file, e.g. ocnbath.nml."""
 
     model_type: Literal["ocnbath"] = "ocnbath"
 
+    s: Optional[int] = Field(
+        default=None,
+        description="Size of array used for reading ETOPO data (typically =500). The larger the array, the faster and more accurate the output.",
+    )
+
     ocnnml: OcnbathConfigOcn
+
+    def bash_invocation(self) -> str:
+        args = []
+        if self.s is not None:
+            args.append(f"-s {self.s}")
+        args.append(f'< "{self.ocnnml.nml_path}"')
+        return self.bash_prettify_invocation(f'ocnbath {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.write_nml_file()

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam import CCAMConfig, CCAMBaseConfig, Input, Output, CCAMNamelistConfig
+from rompy_ccam import CCAMRootConfig, CCAMExeConfig, Input, Output, CCAMNamelistConfig
 
 
 class IgbpvegOutputMode(StrEnum):
@@ -19,7 +19,7 @@ class IgbpvegOutputMode(StrEnum):
     IGBP = "igbp"  # output indices are in terms of IGBP vegetation classes
 
 
-class IgbpvegNamelistConfigVeg(CCAMConfig):
+class IgbpvegNamelistConfigVeg(CCAMRootConfig):
     """&vegnml section of IGBPVEG config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/igbpveg-vegetation-soil-and-urban/"""
 
     # TODO: set correct data types, defaults etc.
@@ -165,7 +165,7 @@ class IgbpvegNamelistConfig(CCAMNamelistConfig):
     vegnml: IgbpvegNamelistConfigVeg
 
 
-class IgbpvegConfig(CCAMBaseConfig):
+class IgbpvegConfig(CCAMExeConfig):
     """Configuration for the igbpveg executable, which produces land-cover datasets for CCAM with the CABLE land-surface model."""
 
     model_type: Literal["igbpveg"] = "igbpveg"
@@ -176,6 +176,13 @@ class IgbpvegConfig(CCAMBaseConfig):
     )
 
     input: IgbpvegNamelistConfig
+
+    def bash_invocation(self) -> str:
+        args = []
+        if self.s is not None:
+            args.append(f"-s {self.s}")
+        args.append(f'< "{self.input.nml_path}"')
+        return self.bash_prettify_invocation(f'igbpveg {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()

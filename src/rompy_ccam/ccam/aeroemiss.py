@@ -3,10 +3,10 @@ from typing import Annotated, Optional, Literal
 
 from pydantic import Field
 
-from rompy_ccam import CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig, Input, Output
+from rompy_ccam import CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig, Input, Output
 
 
-class AeroemissConfigAero(CCAMConfig):
+class AeroemissConfigAero(CCAMRootConfig):
     """&aero section of AEROEMISS config namelist."""
 
     # TODO: set correct data types, defaults etc.
@@ -120,7 +120,7 @@ class AeroemissConfigAero(CCAMConfig):
     ]
 
 
-class AeroemissConfig(CCAMBaseConfig, CCAMNamelistConfig):
+class AeroemissConfig(CCAMExeConfig, CCAMNamelistConfig):
     """Configuration options to be given to the aeroemiss executable.
 
     AEROEMISS creates aerosol emissions for CCAM.  Prognostic aerosols can influence the CCAM simulation through direct effects on the simulated radiation, as well as indirect effects with the cloud microphysics.
@@ -135,6 +135,10 @@ class AeroemissConfig(CCAMBaseConfig, CCAMNamelistConfig):
     ]
 
     aero: AeroemissConfigAero
+
+    def bash_invocation(self) -> str:
+        args = [f"-o {self.output}", f"< {self.nml_path}"]
+        return self.bash_prettify_invocation(f'aeromiss {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.write_nml_file()

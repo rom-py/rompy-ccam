@@ -3,10 +3,10 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from rompy_ccam import CCAMBaseConfig, Input, Output
+from rompy_ccam import CCAMExeConfig, Input, Output
 
 
-class CasafieldConfig(CCAMBaseConfig):
+class CasafieldConfig(CCAMExeConfig):
     """Configuration options to be given to the casafield executable.
 
     CASAFIELD is used to create input files for the CASA-CNP carbon cycle model available with CCAM. In addition to simulating the terrestrial carbon cycle, this option also allows the CABLE land-surface scheme to run with a prognostic Leaf Area Index (LAI) and the Populations-Order-Physiology (POP) model.
@@ -33,3 +33,11 @@ class CasafieldConfig(CCAMBaseConfig):
         ),
         Output,
     ]
+
+    def bash_invocation(self) -> str:
+        args = [
+            f"-t {self.topofile}",
+            f"-i {self.input}",
+            f"-o {self.output}",
+        ]
+        return self.bash_prettify_invocation(f'casafield {" ".join(args)}')

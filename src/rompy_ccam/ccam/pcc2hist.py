@@ -10,7 +10,7 @@ from typing import Optional, Annotated
 
 from pydantic import Field
 
-from rompy_ccam import CCAMConfig, CCAMBaseConfig, Input, Output, CCAMNamelistConfig
+from rompy_ccam import CCAMRootConfig, CCAMExeConfig, Input, Output, CCAMNamelistConfig
 
 
 class Pcc2HistType(StrEnum):
@@ -50,7 +50,7 @@ class Pcc2HistVExtrap(StrEnum):
     MISSING = "missing"  # use missing values instead of extrapolation
 
 
-class Pcc2HistNamelistConfigHistnl(CCAMConfig):
+class Pcc2HistNamelistConfigHistnl(CCAMRootConfig):
     """&histnl section of PCC2HIST config namelist."""
 
     hnames: list[str] = Field(
@@ -67,7 +67,7 @@ class Pcc2HistNamelistConfigHistnl(CCAMConfig):
     )
 
 
-class Pcc2HistNamelistConfigInput(CCAMConfig):
+class Pcc2HistNamelistConfigInput(CCAMRootConfig):
     """&input section of PCC2HIST config namelist."""
 
     # TODO: set correct data types, defaults etc.
@@ -183,7 +183,7 @@ class Pcc2HistNamelistConfig(CCAMNamelistConfig):
     histnl: Optional[Pcc2HistNamelistConfigHistnl] = None
 
 
-class Pcc2HistConfig(CCAMBaseConfig):
+class Pcc2HistConfig(CCAMExeConfig):
     """Configuration options for the pcc2hist executable.
 
     PCC2HIST is used to post-process CCAM output from the cubic grid to the required output grid.
@@ -205,6 +205,17 @@ class Pcc2HistConfig(CCAMBaseConfig):
         description="The vertical extrapolation mode",
     )
     input: Pcc2HistNamelistConfig
+
+    def bash_invocation(self) -> str:
+        args = []
+        if self.cordex:
+            args.append("--cordex")
+        if self.interp != Pcc2HistInterpLong.NONE:
+            args.append(f"--interp {self.interp}")
+        if self.vextrap != Pcc2HistVExtrap.NONE:
+            args.append(f"--vextrap {self.vextrap}")
+        args.append(f'-c "{self.input.nml_path}"')
+        return self.bash_prettify_invocation(f'pcc2hist {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()

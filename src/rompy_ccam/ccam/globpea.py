@@ -15,13 +15,13 @@ from rompy_ccam import (
     Input,
     Output,
     Flag,
-    CCAMConfig,
-    CCAMBaseConfig,
+    CCAMRootConfig,
+    CCAMExeConfig,
     CCAMNamelistConfig,
 )
 
 
-class GlobpeaNamelistConfigDefaults(CCAMConfig):
+class GlobpeaNamelistConfigDefaults(CCAMRootConfig):
     """&defaults section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/defaults-default-switch-values/"""
 
     nversion: Optional[str] = Field(
@@ -198,7 +198,7 @@ def GlobpeaGridresRecommendedTimestep(
     raise ValueError(f"Grid resolution of {gridres_km}km is too small.")
 
 
-class GlobpeaNamelistConfigCardin(CCAMConfig):
+class GlobpeaNamelistConfigCardin(CCAMRootConfig):
     """&cardin section of globpea config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/"""
 
     # Date, run length and miscellaneous
@@ -677,7 +677,7 @@ class GlobpeaNamelistConfigCardin(CCAMConfig):
     )
 
 
-class GlobpeaNamelistConfigSkyin(CCAMConfig):
+class GlobpeaNamelistConfigSkyin(CCAMRootConfig):
     """&skyin section of globpea config namelist. Options to modify the behaviour of radiation and aerosols."""
 
     # Radiation
@@ -781,7 +781,7 @@ class GlobpeaNamelistConfigSkyin(CCAMConfig):
     )
 
 
-class GlobpeaNamelistConfigDatafile(CCAMConfig):
+class GlobpeaNamelistConfigDatafile(CCAMRootConfig):
     """&datafile section of globpea config namelist. Specify input and output filenames."""
 
     # Initial conditions and output
@@ -1014,7 +1014,7 @@ class GlobpeaNamelistConfigDatafile(CCAMConfig):
     ]
 
 
-class GlobpeaNamelistConfigKuo(CCAMConfig):
+class GlobpeaNamelistConfigKuo(CCAMRootConfig):
     """&kuonml section of globpea config namelist. Options to modify convection and cloud microphysics."""
 
     # Convection
@@ -1182,7 +1182,7 @@ class GlobpeaNamelistConfigKuo(CCAMConfig):
     )
 
 
-class GlobpeaNamelistConfigTurb(CCAMConfig):
+class GlobpeaNamelistConfigTurb(CCAMRootConfig):
     """&turbnml section of globpea config namelist. Options to modify boundary layer turbulent mixing and gravity wave drag."""
 
     # Gravity wave drag
@@ -1284,7 +1284,7 @@ class GlobpeaNamelistConfigTurb(CCAMConfig):
     )
 
 
-class GlobpeaNamelistConfigLand(CCAMConfig):
+class GlobpeaNamelistConfigLand(CCAMRootConfig):
     """&landnml section of globpea config namelist. Options to modify land-surface, urban and carbon cycle."""
 
     # TODO: set correct data types, defaults etc.
@@ -1300,7 +1300,7 @@ class GlobpeaNamelistConfigLand(CCAMConfig):
     )
 
 
-class GlobpeaNamelistConfigMlo(CCAMConfig):
+class GlobpeaNamelistConfigMlo(CCAMRootConfig):
     """&mlonml section of globpea config namelist. Options to modify oceans, lakes, rivers and sea-ice."""
 
     # Ocean dynamics
@@ -1382,7 +1382,7 @@ class GlobpeaNamelistConfigMlo(CCAMConfig):
     )
 
 
-class GlobpeaNamelistConfigTrfiles(CCAMConfig):
+class GlobpeaNamelistConfigTrfiles(CCAMRootConfig):
     """&trfiles section of globpea config namelist. Options for specifying user-defined tracers."""
 
     tracerlist: Annotated[
@@ -1412,7 +1412,7 @@ class GlobpeaNamelistConfig(CCAMNamelistConfig):
     trfiles: Optional[GlobpeaNamelistConfigTrfiles] = None
 
 
-class GlobpeaConfig(CCAMBaseConfig):
+class GlobpeaConfig(CCAMExeConfig):
     """Configuration for the globpea executable, the main CCAM model.
     Global Prognostic Equations version A"""
 
@@ -1422,3 +1422,6 @@ class GlobpeaConfig(CCAMBaseConfig):
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()
+
+    def bash_invocation(self) -> str:
+        return self.bash_prettify_invocation(f'globpea -c "{self.input.nml_path}"')

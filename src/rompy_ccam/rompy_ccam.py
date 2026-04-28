@@ -17,7 +17,7 @@ from .fileio_config import FileIOConfigAuto
 from .frozenset_utils import frozenset_format_as_file_list
 
 
-class CCAMConfig(FileIOConfigAuto):
+class CCAMRootConfig(FileIOConfigAuto):
     """A config class for rompy_ccam."""
 
     pass
@@ -26,7 +26,7 @@ class CCAMConfig(FileIOConfigAuto):
 HERE = Path(__file__).parent
 
 
-class CCAMBaseConfig(CCAMConfig, BaseConfig):
+class CCAMBaseConfig(CCAMRootConfig, BaseConfig):
     """Base configuration for all CCAM models."""
 
     template: str = Field(
@@ -72,6 +72,19 @@ class CCAMBaseConfig(CCAMConfig, BaseConfig):
         )
 
 
+class CCAMExeConfig(CCAMBaseConfig):
+    """Configuration for one of the CCAM executables."""
+
+    def bash_prettify_invocation(self, inv: str) -> str:
+        return f"""# {self.workflow_step_description}
+{inv}
+"""
+
+    def bash_invocation(self) -> str:
+        """Return a command to add to a bash script to invoke this CCAM executable with the given configuration."""
+        return f"TODO: implement bash_invocation for {type(self).__name__}"
+
+
 class NullConfig(CCAMBaseConfig):
     """Represents a process which does nothing; consumes no inputs and produces no outputs."""
 
@@ -84,11 +97,11 @@ class NullConfig(CCAMBaseConfig):
 NULL_CONFIG = NullConfig()
 
 
-class ComposedConfig(CCAMBaseConfig):
+class ComposedConfig(CCAMExeConfig):
     """A config composed of two steps, `first` and `second`."""
 
-    first: CCAMBaseConfig
-    second: CCAMBaseConfig
+    first: CCAMExeConfig
+    second: CCAMExeConfig
 
     model_type: Literal["composed"] = "composed"
 
@@ -124,6 +137,9 @@ class ComposedConfig(CCAMBaseConfig):
 
     def __str__(self) -> str:
         return f"{str(self.first)}\n{str(self.second)}"
+
+    def bash_invocation(self) -> str:
+        return self.first.bash_invocation() + "\n" + self.second.bash_invocation()
 
     def __call__(self, *args, **kwargs):
         self.first.__call__(args, kwargs)

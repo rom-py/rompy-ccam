@@ -10,7 +10,7 @@ from pathlib import Path
 import f90nml
 from pydantic import Field
 
-from rompy_ccam import CCAMConfig, Output
+from rompy_ccam import CCAMRootConfig, Output
 
 
 # def nml_prepare_dict(d: dict) -> dict:
@@ -35,7 +35,7 @@ from rompy_ccam import CCAMConfig, Output
 #     return n
 
 
-class CCAMNamelistConfig(CCAMConfig):
+class CCAMNamelistConfig(CCAMRootConfig):
     """A config that is intended to be exported as a namelist (.nml) file."""
 
     nml_path: Annotated[

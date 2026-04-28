@@ -1,5 +1,6 @@
 """CCAM Rompy config."""
 
+import os
 import logging
 from pathlib import Path
 from typing import Literal
@@ -64,21 +65,35 @@ HERE = Path(__file__).parent
 class CCAMConfig(CCAMBaseConfig):
     """CCAM config class."""
 
+    steps: CCAMBaseConfig
+
+    run_script: Path = Path("run.sh")
+
     model_type: Literal["ccam"] = Field(
         default="ccam",
         description="Model type discriminator",
     )
 
-    # We don't need to add `template` as we inherit it from BaseConfig (via CCAMBaseConfig)
+    def generate_run_script(self) -> str:
+        """Generate the run script to run this configuration after the workspace has been generated."""
+        return f"""#!/usr/bin/env bash
 
-    # grid: CCAMGrid = Field(
-    #   description="The global grid domain",
-    # )
+# bash safe mode
+set -euo pipefail
+
+{self.steps.bash_invocation()}
+"""
+
+    def write_run_script(self) -> None:
+        """Generate and write the run script to run this configuration after the workspace has been generated."""
+        with open(self.run_script, "w") as f:
+            f.write(self.generate_run_script())
+
+        os.chmod(self.run_script, 0o755)
 
     def __call__(self, *args, **kwargs) -> dict:
         """Callable where data and config are interfaced and CMD is rendered."""
-        # staging_dir = runtime.staging_dir
-        # Do something
-        # Can get TimeRange from runtime.period
-        # ret = {"staging_dir": staging_dir}
-        return {}
+        self.steps()
+
+        self.write_run_script()
+        return self

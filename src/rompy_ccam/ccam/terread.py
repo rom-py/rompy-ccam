@@ -3,10 +3,10 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam import Input, Output, CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig
+from rompy_ccam import Input, Output, CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig
 
 
-class TerreadNamelistConfigTop(CCAMConfig):
+class TerreadNamelistConfigTop(CCAMRootConfig):
     """
     &topnml section of TERREAD config namelist.
     See https://research.csiro.au/ccam/software-and-model-configuration/terread-orography/.
@@ -136,12 +136,15 @@ class TerreadNamelistConfig(CCAMNamelistConfig):
     topnml: TerreadNamelistConfigTop
 
 
-class TerreadConfig(CCAMBaseConfig):
+class TerreadConfig(CCAMExeConfig):
     """Configuration for the terread executable, used to create orography and land-sea mask data for the specified cubic grid."""
 
     model_type: Literal["terread"] = "terread"
 
     input: TerreadNamelistConfig
+
+    def bash_invocation(self) -> str:
+        return self.bash_prettify_invocation(f'terread < "{self.input.nml_path}"')
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()

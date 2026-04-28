@@ -3,10 +3,10 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam import CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig, Input, Output
+from rompy_ccam import CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig, Input, Output
 
 
-class CdfvidarNamelistConfigG(CCAMConfig):
+class CdfvidarNamelistConfigG(CCAMRootConfig):
     """&gnml section of CDFVIDAR config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/cdfvidar-process-lat-lon-input-to-cubic/."""
 
     # TODO: set correct data types, defaults etc.
@@ -199,7 +199,7 @@ class CdfvidarNamelistConfig(CCAMNamelistConfig):
     gnml: CdfvidarNamelistConfigG
 
 
-class CdfvidarConfig(CCAMBaseConfig):
+class CdfvidarConfig(CCAMExeConfig):
     """Configuration options to be given to the cdfvidar executable.
 
     Cdfvidar is used to convert GCM, reanalyses, analyses or other weather and climate data into initial conditions or mesonest host files for nudging with the conformal cubic format.
@@ -246,6 +246,9 @@ class CdfvidarConfig(CCAMBaseConfig):
     model_type: Literal["cdfvidar"] = "cdfvidar"
 
     input: CdfvidarNamelistConfig
+
+    def bash_invocation(self) -> str:
+        return self.bash_prettify_invocation(f"cdfvidar < {self.input.nml_path}")
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()
