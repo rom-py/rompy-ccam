@@ -1424,4 +1424,6 @@ class GlobpeaConfig(CCAMExeConfig):
         self.input.write_nml_file()
 
     def bash_invocation(self) -> str:
-        return self.bash_prettify_invocation(f'globpea -c "{self.input.nml_path}"')
+        return self.bash_prettify_invocation(
+            f'run_cmd globpea -c "{self.input.nml_path}"'
+        )

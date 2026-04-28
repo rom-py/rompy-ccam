@@ -215,7 +215,7 @@ class Pcc2HistConfig(CCAMExeConfig):
         if self.vextrap != Pcc2HistVExtrap.NONE:
             args.append(f"--vextrap {self.vextrap}")
         args.append(f'-c "{self.input.nml_path}"')
-        return self.bash_prettify_invocation(f'pcc2hist {" ".join(args)}')
+        return self.bash_prettify_invocation(f'run_cmd pcc2hist {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()

@@ -72,7 +72,7 @@ class OcnbathConfig(CCAMExeConfig, CCAMNamelistConfig):
         if self.s is not None:
             args.append(f"-s {self.s}")
         args.append(f'< "{self.ocnnml.nml_path}"')
-        return self.bash_prettify_invocation(f'ocnbath {" ".join(args)}')
+        return self.bash_prettify_invocation(f'run_cmd ocnbath {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.write_nml_file()

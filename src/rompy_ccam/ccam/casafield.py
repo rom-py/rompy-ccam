@@ -40,4 +40,4 @@ class CasafieldConfig(CCAMExeConfig):
             f"-i {self.input}",
             f"-o {self.output}",
         ]
-        return self.bash_prettify_invocation(f'casafield {" ".join(args)}')
+        return self.bash_prettify_invocation(f'run_cmd casafield {" ".join(args)}')

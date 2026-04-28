@@ -69,6 +69,8 @@ class CCAMConfig(CCAMBaseConfig):
 
     run_script: Path = Path("run.sh")
 
+    default_nproc: int = Field(default=36)
+
     model_type: Literal["ccam"] = Field(
         default="ccam",
         description="Model type discriminator",
@@ -80,6 +82,17 @@ class CCAMConfig(CCAMBaseConfig):
 
 # bash safe mode
 set -euo pipefail
+
+nproc=${{MPIRUN_NPROC:-{self.default_nproc}}}
+
+run_cmd() {{
+    local cmd="$1"
+    if [[ "$nproc" -eq 1 ]]; then
+        eval "$cmd"
+    else
+        eval "mpirun --oversubscribe -np $nproc $cmd"
+    fi
+}}
 
 {self.steps.bash_invocation()}
 """

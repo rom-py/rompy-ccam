@@ -138,7 +138,7 @@ class AeroemissConfig(CCAMExeConfig, CCAMNamelistConfig):
 
     def bash_invocation(self) -> str:
         args = [f"-o {self.output}", f"< {self.nml_path}"]
-        return self.bash_prettify_invocation(f'aeromiss {" ".join(args)}')
+        return self.bash_prettify_invocation(f'run_cmd aeromiss {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.write_nml_file()

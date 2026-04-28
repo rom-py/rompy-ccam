@@ -144,7 +144,9 @@ class TerreadConfig(CCAMExeConfig):
     input: TerreadNamelistConfig
 
     def bash_invocation(self) -> str:
-        return self.bash_prettify_invocation(f'terread < "{self.input.nml_path}"')
+        return self.bash_prettify_invocation(
+            f'run_cmd terread < "{self.input.nml_path}"'
+        )
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()
