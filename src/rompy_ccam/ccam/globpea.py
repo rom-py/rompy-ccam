@@ -11,10 +11,14 @@ from typing import Optional, Annotated, Literal
 
 from pydantic import Field, field_serializer
 
-from rompy_ccam.types import Flag
-from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
-from rompy_ccam.namelists import CCAMNamelistConfig
-from rompy_ccam.composable_fileio_config import Input, Output
+from rompy_ccam import (
+    Input,
+    Output,
+    Flag,
+    CCAMConfig,
+    CCAMBaseConfig,
+    CCAMNamelistConfig,
+)
 
 
 class GlobpeaNamelistConfigDefaults(CCAMConfig):
@@ -1415,3 +1419,6 @@ class GlobpeaConfig(CCAMBaseConfig):
     model_type: Literal["globpea"] = "globpea"
 
     input: GlobpeaNamelistConfig
+
+    def __call__(self, *args, **kwargs):
+        self.input.write_nml_file()

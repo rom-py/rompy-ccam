@@ -45,8 +45,8 @@ rompy_ccam = "rompy_ccam.cli:app"
 
 [project.entry-points."rompy.config"]
 ccam = "rompy_ccam.config:CCAMConfig"
-null = "rompy_ccam.composable_fileio_config:NullConfig"
-composed = "rompy_ccam.composable_fileio_config:ComposedConfig"
+null = "rompy_ccam.rompy_ccam:NullConfig"
+composed = "rompy_ccam.rompy_ccam:ComposedConfig"
 globpea = "rompy_ccam.ccam.globpea:GlobpeaConfig"
 terread = "rompy_ccam.ccam.terread:TerreadConfig"
 igbpveg = "rompy_ccam.ccam.igbpveg:IgbpvegConfig"

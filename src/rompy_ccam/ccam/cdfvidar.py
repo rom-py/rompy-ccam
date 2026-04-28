@@ -3,9 +3,7 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
-from rompy_ccam.namelists import CCAMNamelistConfig
-from rompy_ccam.composable_fileio_config import Input, Output
+from rompy_ccam import CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig, Input, Output
 
 
 class CdfvidarNamelistConfigG(CCAMConfig):

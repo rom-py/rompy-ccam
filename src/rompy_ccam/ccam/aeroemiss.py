@@ -3,9 +3,7 @@ from typing import Annotated, Optional, Literal
 
 from pydantic import Field
 
-from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
-from rompy_ccam.namelists import CCAMNamelistConfig
-from rompy_ccam.composable_fileio_config import Input, Output
+from rompy_ccam import CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig, Input, Output
 
 
 class AeroemissConfigAero(CCAMConfig):
@@ -137,3 +135,6 @@ class AeroemissConfig(CCAMBaseConfig, CCAMNamelistConfig):
     ]
 
     aero: AeroemissConfigAero
+
+    def __call__(self, *args, **kwargs):
+        self.write_nml_file()

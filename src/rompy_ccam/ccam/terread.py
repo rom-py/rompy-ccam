@@ -3,9 +3,7 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam.composable_fileio_config import Input, Output
-from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
-from rompy_ccam.namelists import CCAMNamelistConfig
+from rompy_ccam import Input, Output, CCAMConfig, CCAMBaseConfig, CCAMNamelistConfig
 
 
 class TerreadNamelistConfigTop(CCAMConfig):
@@ -144,3 +142,6 @@ class TerreadConfig(CCAMBaseConfig):
     model_type: Literal["terread"] = "terread"
 
     input: TerreadNamelistConfig
+
+    def __call__(self, *args, **kwargs):
+        self.input.write_nml_file()

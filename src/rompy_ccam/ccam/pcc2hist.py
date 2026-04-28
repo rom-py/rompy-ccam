@@ -10,9 +10,7 @@ from typing import Optional, Annotated
 
 from pydantic import Field
 
-from rompy_ccam.rompy_ccam import CCAMConfig, CCAMBaseConfig
-from rompy_ccam.composable_fileio_config import Input, Output
-from rompy_ccam.namelists import CCAMNamelistConfig
+from rompy_ccam import CCAMConfig, CCAMBaseConfig, Input, Output, CCAMNamelistConfig
 
 
 class Pcc2HistType(StrEnum):
@@ -207,3 +205,6 @@ class Pcc2HistConfig(CCAMBaseConfig):
         description="The vertical extrapolation mode",
     )
     input: Pcc2HistNamelistConfig
+
+    def __call__(self, *args, **kwargs):
+        self.input.write_nml_file()

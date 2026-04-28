@@ -1,21 +1,4 @@
-import sys
 from pathlib import Path
-from dataclasses import dataclass
-from typing import (
-    Literal,
-)
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
-from rompy.core.config import BaseConfig, RompyBaseModel
-
-from rompy_ccam.frozenset_utils import (
-    frozenset_list_union,
-    frozenset_format_as_file_list,
-)
 from rompy_ccam.pydantic import (
     fields_satisfying,
     field_is_type_with_tag,
@@ -23,6 +6,12 @@ from rompy_ccam.pydantic import (
     fields_with_type_satisfying,
     type_is_subclass,
     type_is_optional_subclass,
+)
+
+from rompy.core.config import RompyBaseModel
+
+from rompy_ccam.frozenset_utils import (
+    frozenset_list_union,
 )
 
 
@@ -154,82 +143,3 @@ class FileIOConfigAuto(FileInputConfigAuto, FileOutputConfigAuto):
     """Inherit from this to automatically find input and output files your config class consumes and produces."""
 
     pass
-
-
-class NullConfig(FileIOConfig, BaseConfig):
-    """Represents a process which does nothing; consumes no inputs and produces no outputs."""
-
-    model_type: Literal["null"] = "null"
-
-    def __repr__(self) -> str:
-        return "NullConfig()"
-
-
-NULL_CONFIG = NullConfig()
-
-
-@dataclass(frozen=True)
-class ComposedConfig(FileIOConfig, BaseConfig):
-    """A config composed of two steps, `first` and `second`."""
-
-    first: FileIOConfig
-    second: FileIOConfig
-
-    model_type: Literal["composed"] = "composed"
-
-    def __init__(self, first: FileIOConfig, second: FileIOConfig) -> None:
-        # super().__init__()
-        object.__setattr__(self, "first", first)
-        object.__setattr__(self, "second", second)
-        object.__setattr__(self, "model_type", "composed")
-
-        conflicting_output_files: frozenset[Path] = (
-            self.first.output_files & self.second.output_files
-        )
-        if conflicting_output_files:
-            raise ValueError(
-                f"Different steps of workflow would create/overwrite these files: {frozenset_format_as_file_list(conflicting_output_files)}:\n***First workflow:***\n{str(self.first)}\n***Second workflow:***\n{str(self.second)}"
-            )
-
-    def before(self, next: Self) -> Self:
-        if isinstance(self, NullConfig):
-            return next
-        if isinstance(next, NullConfig):
-            return self
-        return type(self)(self, next)
-
-    def __add__(self, other: Self) -> Self:
-        return self.before(other)
-
-    def after(self, previous: Self) -> Self:
-        if isinstance(self, NullConfig):
-            return previous
-        if isinstance(previous, NullConfig):
-            return self
-        return type(self)(previous, self)
-
-    def __radd__(self, other: Self) -> Self:
-        return self.after(other)
-
-    @property
-    def input_files(self) -> frozenset[Path]:
-        # Return the first config's input files, plus any of the second config's input
-        # files which are *not* produced by the first config.
-        return self.first.input_files | (
-            self.second.input_files - self.first.output_files
-        )
-
-    @property
-    def output_files(self) -> frozenset[Path]:
-        # Return the union of the two sets of outputs
-        return self.first.output_files | self.second.output_files
-
-    def __repr__(self) -> str:
-        return f"ComposedConfig(first={self.first!r}, second={self.second!r})"
-
-    def __str__(self) -> str:
-        return f"{str(self.first)}\n{str(self.second)}"
-
-    def __call__(self, *args, **kwargs):
-        self.first.__call__(args, kwargs)
-        self.second.__call__(args, kwargs)
