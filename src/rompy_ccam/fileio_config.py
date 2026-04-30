@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union, Callable, Any, Tuple
 from rompy_ccam.pydantic import (
     fields_satisfying,
     field_is_type_with_tag,
@@ -37,47 +38,54 @@ class FileInputConfig(RompyBaseModel):
         return frozenset()
 
 
+def find_paths_with_tag(
+    tree: RompyBaseModel,
+    tag: Any,
+    cls: Union[type, Tuple[Union[type, Tuple[Any, ...]], ...]],
+    get_subtree_paths: Callable[[Any], frozenset[Path]],
+) -> frozenset[Path]:
+    return frozenset().union(
+        # All fields of type Path marked as `tag`
+        [
+            getattr(tree, field_name)
+            for field_name in fields_satisfying(tree, field_is_type_with_tag(Path, tag))
+        ],
+        # All fields of type Optional[Path] tagged as `tag` whose value is not None
+        [
+            field_value
+            for field in fields_satisfying(
+                tree, field_is_optional_type_with_tag(Path, tag)
+            )
+            if (field_value := getattr(tree, field)) is not None
+        ],
+        # Input files of all fields which are a subclass of `cls`
+        frozenset_list_union(
+            [
+                get_subtree_paths(getattr(tree, field))
+                for field in fields_with_type_satisfying(tree, type_is_subclass(cls))
+            ]
+        ),
+        # Input files of all fields which are an Optional[subclass of `cls`] and are not None
+        frozenset_list_union(
+            [
+                get_subtree_paths(field_value)
+                for field in fields_with_type_satisfying(
+                    tree, type_is_optional_subclass(cls)
+                )
+                if (field_value := getattr(tree, field)) is not None
+            ]
+        ),
+    )
+
+
 class FileInputConfigAuto(FileInputConfig, RompyBaseModel):
     """A class which automatically lists its input files by traversing its pydantic model."""
 
     @property
     def input_files(self) -> frozenset[Path]:
         """What files does this config expect to be present in the filesystem when it runs?"""
-        return frozenset().union(
-            # All fields of type Path marked as Input
-            [
-                getattr(self, field_name)
-                for field_name in fields_satisfying(
-                    self, field_is_type_with_tag(Path, Input)
-                )
-            ],
-            # All fields of type Optional[Path] tagged as Input whose value is not None
-            [
-                field_value
-                for field in fields_satisfying(
-                    self, field_is_optional_type_with_tag(Path, Input)
-                )
-                if (field_value := getattr(self, field)) is not None
-            ],
-            # Input files of all fields which are a subclass of FileInputConfig
-            frozenset_list_union(
-                [
-                    getattr(self, field).input_files
-                    for field in fields_with_type_satisfying(
-                        self, type_is_subclass(FileInputConfig)
-                    )
-                ]
-            ),
-            # Input files of all fields which are an Optional[subclass of FileInputConfig] and are not None
-            frozenset_list_union(
-                [
-                    field_value.input_files
-                    for field in fields_with_type_satisfying(
-                        self, type_is_optional_subclass(FileInputConfig)
-                    )
-                    if (field_value := getattr(self, field)) is not None
-                ]
-            ),
+        return find_paths_with_tag(
+            self, Input, FileInputConfig, lambda fi: fi.input_files
         )
 
 
@@ -95,41 +103,8 @@ class FileOutputConfigAuto(FileOutputConfig, RompyBaseModel):
     @property
     def output_files(self) -> frozenset[Path]:
         """What files does running this config produce?"""
-        return frozenset().union(
-            # All fields of type Path marked as Output
-            [
-                getattr(self, field_name)
-                for field_name in fields_satisfying(
-                    self, field_is_type_with_tag(Path, Output)
-                )
-            ],
-            # All fields of type Optional[Path] tagged as Output whose value is not None
-            [
-                field_value
-                for field in fields_satisfying(
-                    self, field_is_optional_type_with_tag(Path, Output)
-                )
-                if (field_value := getattr(self, field)) is not None
-            ],
-            # Output files of all fields which are a subclass of FileOutputConfig
-            frozenset_list_union(
-                [
-                    getattr(self, field).output_files
-                    for field in fields_with_type_satisfying(
-                        self, type_is_subclass(FileOutputConfig)
-                    )
-                ]
-            ),
-            # Output files of all fields which are an Optional[subclass of FileOutputConfig] and are not None
-            frozenset_list_union(
-                [
-                    field_value.output_files
-                    for field in fields_with_type_satisfying(
-                        self, type_is_optional_subclass(FileOutputConfig)
-                    )
-                    if (field_value := getattr(self, field)) is not None
-                ]
-            ),
+        return find_paths_with_tag(
+            self, Output, FileOutputConfig, lambda fi: fi.output_files
         )
 
 
