@@ -78,7 +78,7 @@ def find_paths_with_tag(
     )
 
 
-class FileInputConfigAuto(FileInputConfig, RompyBaseModel):
+class FileInputConfigAuto(FileInputConfig):
     """A class which automatically lists its input files by traversing its pydantic model."""
 
     @property
@@ -97,7 +97,7 @@ class FileOutputConfig(RompyBaseModel):
         return frozenset()
 
 
-class FileOutputConfigAuto(FileOutputConfig, RompyBaseModel):
+class FileOutputConfigAuto(FileOutputConfig):
     """A class which automatically lists its output files by traversing its pydantic model."""
 
     @property

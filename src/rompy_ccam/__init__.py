@@ -1,6 +1,6 @@
 """Top-level package for rompy-ccam."""
 
-from .config import CCAMConfig
+from .config import CCAMConfig, DEFAULT_CCAM_INSTALL
 from .fileio_config import Input, Output
 from .types import Flag
 from .rompy_ccam import CCAMRootConfig, CCAMBaseConfig, CCAMExeConfig, NULL_CONFIG
@@ -16,7 +16,7 @@ __all__ = [
     "NULL_CONFIG",
     "Flag",
     "CCAMConfig",
-    "CCAMRootConfig",
+    "DEFAULT_CCAM_INSTALL" "CCAMRootConfig",
     "CCAMBaseConfig",
     "CCAMExeConfig",
     "CCAMNamelistConfig",

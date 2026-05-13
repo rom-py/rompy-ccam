@@ -60,10 +60,16 @@ HERE = Path(__file__).parent
 #     default=GlobpeaConfig.DEFAULT_MLEV,
 #     description="Number of model levels (27, 35, 54, 72, 108 or 144)"
 # )
+DEFAULT_CCAM_INSTALL: Path = Path.home() / "ccaminstall"
 
 
 class CCAMConfig(CCAMBaseConfig):
     """CCAM config class."""
+
+    model_type: Literal["ccam"] = Field(
+        default="ccam",
+        description="Model type discriminator",
+    )
 
     steps: CCAMBaseConfig
 
@@ -71,10 +77,7 @@ class CCAMConfig(CCAMBaseConfig):
 
     default_nproc: int = Field(default=36)
 
-    model_type: Literal["ccam"] = Field(
-        default="ccam",
-        description="Model type discriminator",
-    )
+    ccam_install: Path = Field(DEFAULT_CCAM_INSTALL)
 
     def generate_run_script(self) -> str:
         """Generate the run script to run this configuration after the workspace has been generated."""
@@ -83,16 +86,23 @@ class CCAMConfig(CCAMBaseConfig):
 # bash safe mode
 set -euo pipefail
 
-nproc=${{MPIRUN_NPROC:-{self.default_nproc}}}
+NPROC=${{MPIRUN_NPROC:-{self.default_nproc}}}
+CCAM_INSTALL=${{CCAM_INSTALL:-{self.ccam_install}}}
+CCAM_BIN="${{CCAM_INSTALL/bin}}"
+
+PATH="${{CCAM_BIN}}:$PATH"
 
 run_cmd() {{
     local cmd="$1"
-    if [[ "$nproc" -eq 1 ]]; then
+    if [[ "$NPROC" -eq 1 ]]; then
         eval "$cmd"
     else
-        eval "mpirun --oversubscribe -np $nproc $cmd"
+        eval "mpirun --oversubscribe -np $NPROC $cmd"
     fi
 }}
+
+# Execute in the directory in which this script is located
+cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")"
 
 {self.steps.bash_invocation()}
 """
