@@ -60,7 +60,7 @@ HERE = Path(__file__).parent
 #     default=GlobpeaConfig.DEFAULT_MLEV,
 #     description="Number of model levels (27, 35, 54, 72, 108 or 144)"
 # )
-DEFAULT_CCAM_INSTALL: Path = Path.home() / "ccaminstall"
+DEFAULT_CCAM_INSTALL: Path = Path("~") / "ccaminstall"
 
 
 class CCAMConfig(CCAMBaseConfig):
@@ -71,7 +71,7 @@ class CCAMConfig(CCAMBaseConfig):
         description="Model type discriminator",
     )
 
-    steps: CCAMBaseConfig
+    workflow: CCAMBaseConfig
 
     run_script: Path = Path("run.sh")
 
@@ -87,7 +87,7 @@ class CCAMConfig(CCAMBaseConfig):
 set -euo pipefail
 
 NPROC=${{MPIRUN_NPROC:-{self.default_nproc}}}
-CCAM_INSTALL=${{CCAM_INSTALL:-{self.ccam_install}}}
+CCAM_INSTALL=${{CCAM_INSTALL:-"{self.ccam_install}"}}
 CCAM_BIN="${{CCAM_INSTALL/bin}}"
 
 PATH="${{CCAM_BIN}}:$PATH"
@@ -104,7 +104,7 @@ run_cmd() {{
 # Execute in the directory in which this script is located
 cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")"
 
-{self.steps.bash_invocation()}
+{self.workflow.bash_invocation()}
 """
 
     def write_run_script(self) -> None:
@@ -116,7 +116,7 @@ cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")"
 
     def __call__(self, *args, **kwargs) -> dict:
         """Callable where data and config are interfaced and CMD is rendered."""
-        self.steps()
+        self.workflow()
 
         self.write_run_script()
         return self
