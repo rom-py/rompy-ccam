@@ -70,7 +70,7 @@ homepage = "https://github.com/rom-py/rompy_ccam"
 package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
-"*" = ["*.*"]
+"*" = ["*.*", "**/.gitkeep"]
 
 [tool.setuptools.dynamic]
 version = {attr = "rompy_ccam.__version__"}
