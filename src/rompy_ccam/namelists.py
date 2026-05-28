@@ -47,7 +47,7 @@ class CCAMNamelistConfig(CCAMRootConfig):
         Output,
     ]
 
-    def write_nml_file(self, force=False, sort=False):
+    def write_nml_file(self, force=False):
         if self.nml_path is None:
             raise ValueError("nml_path must be defined before calling write_nml_file()")
 
@@ -65,4 +65,4 @@ class CCAMNamelistConfig(CCAMRootConfig):
         )
         nml = dump
         # nml = nml_prepare_dict(dump)
-        f90nml.write(nml, self.nml_path, force=force, sort=sort),
+        f90nml.write(nml, self.nml_path, force=force, sort=False),

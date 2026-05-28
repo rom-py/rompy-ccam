@@ -182,7 +182,7 @@ class IgbpvegConfig(CCAMExeConfig):
         if self.s is not None:
             args.append(f"-s {self.s}")
         args.append(f'< "{self.input.nml_path}"')
-        return self.bash_prettify_invocation(f'run_cmd igbpveg {" ".join(args)}')
+        return self.bash_prettify_invocation(f'igbpveg {" ".join(args)}')
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()

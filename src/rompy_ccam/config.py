@@ -86,18 +86,20 @@ class CCAMConfig(CCAMBaseConfig):
 # bash safe mode
 set -euo pipefail
 
+# show us what commands are being called
+set -x
+
 NPROC=${{MPIRUN_NPROC:-{self.default_nproc}}}
 CCAM_INSTALL=${{CCAM_INSTALL:-"{self.ccam_install}"}}
 CCAM_BIN="${{CCAM_INSTALL/bin}}"
 
 PATH="${{CCAM_BIN}}:$PATH"
 
-run_cmd() {{
-    local cmd="$1"
+run_mpi_cmd() {{
     if [[ "$NPROC" -eq 1 ]]; then
-        eval "$cmd"
+        eval "$@"
     else
-        eval "mpirun --oversubscribe -np $NPROC $cmd"
+        eval "mpirun --oversubscribe -np $NPROC $@"
     fi
 }}
 

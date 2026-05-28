@@ -249,7 +249,7 @@ class CdfvidarConfig(CCAMExeConfig):
 
     def bash_invocation(self) -> str:
         return self.bash_prettify_invocation(
-            f"run_cmd cdfvidar < {self.input.nml_path}"
+            f"cdfvidar < {self.input.nml_path}"
         )
 
     def __call__(self, *args, **kwargs):

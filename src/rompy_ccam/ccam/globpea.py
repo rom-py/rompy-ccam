@@ -207,8 +207,8 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
     )
 
     @field_serializer("kdate_s")
-    def serialize_kdate_s(self, dt: date) -> str:
-        return dt.strftime("%Y%m%d")
+    def serialize_kdate_s(self, dt: date) -> int:
+        return int(dt.strftime("%Y%m%d"))
 
     ktime_s: time = Field(
         default=time(0, 0),
@@ -216,8 +216,8 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
     )
 
     @field_serializer("ktime_s")
-    def serialize_ktime_s(self, t: time) -> str:
-        return t.strftime("%H%M")
+    def serialize_ktime_s(self, t: time) -> int:
+        return int(t.strftime("%H%M"))
 
     leap: GlobpeaLeapMode = Field(
         default=GlobpeaLeapMode.NO_LEAP,
@@ -684,13 +684,12 @@ class GlobpeaNamelistConfigSkyin(CCAMRootConfig):
 
     # TODO: set correct data types, defaults etc.
 
-    # TODO
     mins_rad: Optional[int] = Field(
         default=None,
         description="Period to update radiation in mins.  Setting mins_rad=-1 will automatically select a value based on the grid resolution.",
     )
     # TODO
-    qgmin: Optional[int] = Field(
+    qgmin: Optional[float] = Field(
         default=None,
         description="Minimum value of water vapor mixing ratio.",
     )
@@ -1401,11 +1400,11 @@ class GlobpeaNamelistConfig(CCAMNamelistConfig):
     # Change the default of nml_path, inherited from NMLConfig, to 'input', which is globpea's default
     nml_path: Optional[Path] = Path("input")
 
-    defaults: Optional[GlobpeaNamelistConfigDefaults] = None
-    cardin: Optional[GlobpeaNamelistConfigCardin] = None
-    skyin: Optional[GlobpeaNamelistConfigSkyin] = None
-    datafile: Optional[GlobpeaNamelistConfigDatafile] = None
-    kuonml: Optional[GlobpeaNamelistConfigKuo] = None
+    defaults: GlobpeaNamelistConfigDefaults = GlobpeaNamelistConfigDefaults()
+    cardin: GlobpeaNamelistConfigCardin
+    skyin: GlobpeaNamelistConfigSkyin
+    datafile: GlobpeaNamelistConfigDatafile
+    kuonml: GlobpeaNamelistConfigKuo
     turbnml: Optional[GlobpeaNamelistConfigTurb] = None
     landnml: Optional[GlobpeaNamelistConfigLand] = None
     mlonml: Optional[GlobpeaNamelistConfigMlo] = None
@@ -1425,5 +1424,5 @@ class GlobpeaConfig(CCAMExeConfig):
 
     def bash_invocation(self) -> str:
         return self.bash_prettify_invocation(
-            f'run_cmd globpea -c "{self.input.nml_path}"'
+            f'run_mpi_cmd globpea -c "{self.input.nml_path}"'
         )
