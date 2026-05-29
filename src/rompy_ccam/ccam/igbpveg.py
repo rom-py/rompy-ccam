@@ -160,9 +160,9 @@ class IgbpvegNamelistConfigVeg(CCAMRootConfig):
 class IgbpvegNamelistConfig(CCAMNamelistConfig):
     """Configuration for the igbpveg executable. To be output as a namelist file. e.g. igbpveg.nml."""
 
-    # nml_path is None as igbpveg takes its namelist from stdin
+    nml_path: Path = Path("igbpveg.nml")
 
-    vegnml: IgbpvegNamelistConfigVeg
+    vegnml: IgbpvegNamelistConfigVeg = IgbpvegNamelistConfigVeg()
 
 
 class IgbpvegConfig(CCAMExeConfig):
@@ -170,14 +170,14 @@ class IgbpvegConfig(CCAMExeConfig):
 
     model_type: Literal["igbpveg"] = "igbpveg"
 
-    workflow_step_description = f'Produce land-cover dataset'
+    workflow_step_description: Optional[str] = "Produce land-cover dataset"
 
     s: Optional[int] = Field(
         default=None,
         description="Command-line option which controls how much data is processed in memory. Larger values of -s increase memory usage, but can speed-up igbpveg.",
     )
 
-    input: IgbpvegNamelistConfig
+    input: IgbpvegNamelistConfig = IgbpvegNamelistConfig()
 
     def bash_invocation(self) -> str:
         args = []

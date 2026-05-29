@@ -131,9 +131,8 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
 class TerreadNamelistConfig(CCAMNamelistConfig):
     """Configuration for the terread executable's configuration namelist (.nml)."""
 
-    # nml_path is None as terread takes its namelist from stdin
-
-    topnml: TerreadNamelistConfigTop
+    nml_path: Path = Path("terread.nml")
+    topnml: TerreadNamelistConfigTop = TerreadNamelistConfigTop()
 
 
 class TerreadConfig(CCAMExeConfig):
@@ -141,14 +140,12 @@ class TerreadConfig(CCAMExeConfig):
 
     model_type: Literal["terread"] = "terread"
 
-    workflow_step_description = 'Create orography and land-sea mask data'
+    workflow_step_description: Optional[str] = "Create orography and land-sea mask data"
 
-    input: TerreadNamelistConfig
+    input: TerreadNamelistConfig = TerreadNamelistConfig()
 
     def bash_invocation(self) -> str:
-        return self.bash_prettify_invocation(
-            f'terread < "{self.input.nml_path}"'
-        )
+        return self.bash_prettify_invocation(f'terread < "{self.input.nml_path}"')
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()

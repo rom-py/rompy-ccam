@@ -19,8 +19,8 @@ class CCAMDefaultWorkflow(CCAMBaseConfig):
         description="Model type discriminator",
     )
 
-    terread: TerreadConfig
-    igbpveg: IgbpvegConfig
+    terread: TerreadConfig = TerreadConfig()
+    igbpveg: IgbpvegConfig = IgbpvegConfig()
     cdfvidar: Optional[CdfvidarConfig]
     globpea: GlobpeaConfig
     pcc2hist: Optional[Pcc2HistConfig]

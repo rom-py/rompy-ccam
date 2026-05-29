@@ -1397,8 +1397,8 @@ class GlobpeaNamelistConfigTrfiles(CCAMRootConfig):
 class GlobpeaNamelistConfig(CCAMNamelistConfig):
     """Configuration for the globpea executable's configuration namelist."""
 
-    # Change the default of nml_path, inherited from NMLConfig, to 'input', which is globpea's default
-    nml_path: Optional[Path] = Path("input")
+    # Set the default of nml_path, inherited from CCAMNamelistConfig, to 'input', which is globpea's default
+    nml_path: Path = Path("input")
 
     defaults: GlobpeaNamelistConfigDefaults = GlobpeaNamelistConfigDefaults()
     cardin: GlobpeaNamelistConfigCardin
@@ -1417,7 +1417,7 @@ class GlobpeaConfig(CCAMExeConfig):
 
     model_type: Literal["globpea"] = "globpea"
 
-    workflow_step_description = 'Run the CCAM model'
+    workflow_step_description: Optional[str] = "Run the CCAM model"
 
     input: GlobpeaNamelistConfig
 

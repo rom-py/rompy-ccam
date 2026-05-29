@@ -176,8 +176,7 @@ class Pcc2HistNamelistConfig(CCAMNamelistConfig):
     See https://research.csiro.au/ccam/software-and-model-configuration/pcc2hist-process-cubic-output-to-lat-lon/.
     """
 
-    # This can be overridden
-    nml_path: Optional[Path] = Path("cc.nml")
+    nml_path: Path = Path("cc.nml")
 
     input: Optional[Pcc2HistNamelistConfigInput] = None
     histnl: Optional[Pcc2HistNamelistConfigHistnl] = None
@@ -192,7 +191,9 @@ class Pcc2HistConfig(CCAMExeConfig):
     A list of pcc2hist output variables can be found at https://research.csiro.au/ccam/scientific-description/ccam-output-variables/.
     """
 
-    workflow_step_description = 'Post-process CCAM output from the cubic grid to the required output grid'
+    workflow_step_description: Optional[str] = (
+        "Post-process CCAM output from the cubic grid to the required output grid"
+    )
 
     cordex: bool = Field(
         default=False,
@@ -206,7 +207,7 @@ class Pcc2HistConfig(CCAMExeConfig):
         default=Pcc2HistVExtrap.NONE,
         description="The vertical extrapolation mode",
     )
-    input: Pcc2HistNamelistConfig
+    input: Pcc2HistNamelistConfig = Pcc2HistNamelistConfig()
 
     def bash_invocation(self) -> str:
         args = []

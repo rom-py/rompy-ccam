@@ -39,10 +39,9 @@ class CCAMNamelistConfig(CCAMRootConfig):
     """A config that is intended to be exported as a namelist (.nml) file."""
 
     nml_path: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
-            description="Optional path of the namelist (.nml) file to create.",
+            description="Path of the namelist (.nml) file to create.",
         ),
         Output,
     ]

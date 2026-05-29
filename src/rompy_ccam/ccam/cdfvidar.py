@@ -196,7 +196,9 @@ class CdfvidarNamelistConfigG(CCAMRootConfig):
 class CdfvidarNamelistConfig(CCAMNamelistConfig):
     """Configuration for the cdfvidar executable's configuration namelist."""
 
-    gnml: CdfvidarNamelistConfigG
+    nml_path: Path = Path("cdfvidar.nml")
+
+    gnml: CdfvidarNamelistConfigG = CdfvidarNamelistConfigG()
 
 
 class CdfvidarConfig(CCAMExeConfig):
@@ -245,14 +247,14 @@ class CdfvidarConfig(CCAMExeConfig):
 
     model_type: Literal["cdfvidar"] = "cdfvidar"
 
-    workflow_step_description = f'Convert weather or climate data into conformal cubic format'
+    workflow_step_description: Optional[str] = (
+        "Convert weather or climate data into conformal cubic format"
+    )
 
-    input: CdfvidarNamelistConfig
+    input: CdfvidarNamelistConfig = CdfvidarNamelistConfig()
 
     def bash_invocation(self) -> str:
-        return self.bash_prettify_invocation(
-            f"cdfvidar < {self.input.nml_path}"
-        )
+        return self.bash_prettify_invocation(f"cdfvidar < {self.input.nml_path}")
 
     def __call__(self, *args, **kwargs):
         self.input.write_nml_file()
