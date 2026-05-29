@@ -141,6 +141,8 @@ class TerreadConfig(CCAMExeConfig):
 
     model_type: Literal["terread"] = "terread"
 
+    workflow_step_description = 'Create orography and land-sea mask data'
+
     input: TerreadNamelistConfig
 
     def bash_invocation(self) -> str:

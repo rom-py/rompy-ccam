@@ -245,6 +245,8 @@ class CdfvidarConfig(CCAMExeConfig):
 
     model_type: Literal["cdfvidar"] = "cdfvidar"
 
+    workflow_step_description = f'Convert weather or climate data into conformal cubic format'
+
     input: CdfvidarNamelistConfig
 
     def bash_invocation(self) -> str:

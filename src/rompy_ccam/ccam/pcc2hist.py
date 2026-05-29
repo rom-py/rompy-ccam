@@ -192,6 +192,8 @@ class Pcc2HistConfig(CCAMExeConfig):
     A list of pcc2hist output variables can be found at https://research.csiro.au/ccam/scientific-description/ccam-output-variables/.
     """
 
+    workflow_step_description = 'Post-process CCAM output from the cubic grid to the required output grid'
+
     cordex: bool = Field(
         default=False,
         description="Format output for CORDEX.",

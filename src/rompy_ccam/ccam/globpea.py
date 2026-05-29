@@ -1402,9 +1402,9 @@ class GlobpeaNamelistConfig(CCAMNamelistConfig):
 
     defaults: GlobpeaNamelistConfigDefaults = GlobpeaNamelistConfigDefaults()
     cardin: GlobpeaNamelistConfigCardin
-    skyin: GlobpeaNamelistConfigSkyin
-    datafile: GlobpeaNamelistConfigDatafile
-    kuonml: GlobpeaNamelistConfigKuo
+    skyin: GlobpeaNamelistConfigSkyin = GlobpeaNamelistConfigSkyin()
+    datafile: GlobpeaNamelistConfigDatafile = GlobpeaNamelistConfigDatafile()
+    kuonml: GlobpeaNamelistConfigKuo = GlobpeaNamelistConfigKuo()
     turbnml: Optional[GlobpeaNamelistConfigTurb] = None
     landnml: Optional[GlobpeaNamelistConfigLand] = None
     mlonml: Optional[GlobpeaNamelistConfigMlo] = None
@@ -1416,6 +1416,8 @@ class GlobpeaConfig(CCAMExeConfig):
     Global Prognostic Equations version A"""
 
     model_type: Literal["globpea"] = "globpea"
+
+    workflow_step_description = 'Run the CCAM model'
 
     input: GlobpeaNamelistConfig
 
