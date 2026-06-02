@@ -147,5 +147,7 @@ class TerreadConfig(CCAMExeConfig):
     def bash_invocation(self) -> str:
         return self.bash_prettify_invocation(f'terread < "{self.input.nml_path}"')
 
-    def __call__(self, *args, **kwargs):
-        self.input.write_nml_file()
+    def __call__(
+        self, runtime
+    ):  # runtime is a ModelRun, which can't be imported due to circularity
+        self.input.write_nml_file(Path(runtime.staging_dir))

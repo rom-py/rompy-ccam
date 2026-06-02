@@ -25,14 +25,16 @@ class CCAMDefaultWorkflow(CCAMBaseConfig):
     globpea: GlobpeaConfig
     pcc2hist: Optional[Pcc2HistConfig]
 
-    def __call__(self, *args, **kwargs) -> dict:
-        self.terread()
-        self.igbpveg()
+    def __call__(
+        self, runtime
+    ) -> dict:  # runtime is a ModelRun, which can't be imported due to circularity
+        self.terread(runtime)
+        self.igbpveg(runtime)
         if self.cdfvidar is not None:
-            self.cdfvidar()
-        self.globpea()
+            self.cdfvidar(runtime)
+        self.globpea(runtime)
         if self.pcc2hist is not None:
-            self.pcc2hist()
+            self.pcc2hist(runtime)
 
     def bash_invocation(self) -> str:
         r = self.terread.bash_invocation()

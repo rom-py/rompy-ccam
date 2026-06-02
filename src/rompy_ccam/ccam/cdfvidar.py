@@ -1,13 +1,24 @@
+import sys
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 from typing import Optional, Annotated, Literal
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from rompy_ccam import CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig, Input, Output
 
 
 class CdfvidarNamelistConfigG(CCAMRootConfig):
     """&gnml section of CDFVIDAR config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/cdfvidar-process-lat-lon-input-to-cubic/."""
+
+    @model_validator(mode="after")
+    def check_inf_or_t_file(self) -> Self:
+        if self.inf is None and self.t_file is None:
+            raise ValueError("Either 'inf' or 't_file' must be provided")
 
     # TODO: set correct data types, defaults etc.
     kl: Optional[int] = Field(
@@ -256,5 +267,7 @@ class CdfvidarConfig(CCAMExeConfig):
     def bash_invocation(self) -> str:
         return self.bash_prettify_invocation(f"cdfvidar < {self.input.nml_path}")
 
-    def __call__(self, *args, **kwargs):
-        self.input.write_nml_file()
+    def __call__(
+        self, runtime
+    ):  # runtime is a ModelRun, which can't be imported due to circularity
+        self.input.write_nml_file(Path(runtime.staging_dir))

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Literal
 from pydantic import Field
 
-# from rompy.model import ModelRun
 from rompy_ccam.rompy_ccam import CCAMBaseConfig
 
 # from rompy_ccam.grid import CCAMGrid
@@ -60,7 +59,7 @@ HERE = Path(__file__).parent
 #     default=GlobpeaConfig.DEFAULT_MLEV,
 #     description="Number of model levels (27, 35, 54, 72, 108 or 144)"
 # )
-DEFAULT_CCAM_INSTALL: Path = Path("~") / "ccaminstall"
+DEFAULT_CCAM_INSTALL: Path = Path("$HOME") / "ccaminstall"
 
 
 class CCAMConfig(CCAMBaseConfig):
@@ -109,16 +108,18 @@ cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")"
 {self.workflow.bash_invocation()}
 """
 
-    def write_run_script(self) -> None:
+    def write_run_script(self, staging_dir: Path) -> None:
         """Generate and write the run script to run this configuration after the workspace has been generated."""
-        with open(self.run_script, "w") as f:
+        with open(staging_dir / self.run_script, "w") as f:
             f.write(self.generate_run_script())
 
-        os.chmod(self.run_script, 0o755)
+        os.chmod(staging_dir / self.run_script, 0o755)
 
-    def __call__(self, *args, **kwargs) -> dict:
+    def __call__(
+        self, runtime
+    ) -> dict:  # runtime is a ModelRun, which can't be imported due to circularity
         """Callable where data and config are interfaced and CMD is rendered."""
-        self.workflow()
+        self.workflow(runtime)
 
-        self.write_run_script()
+        self.write_run_script(Path(runtime.staging_dir))
         return self

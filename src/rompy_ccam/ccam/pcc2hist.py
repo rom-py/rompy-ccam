@@ -220,5 +220,7 @@ class Pcc2HistConfig(CCAMExeConfig):
         args.append(f'-c "{self.input.nml_path}"')
         return self.bash_prettify_invocation(f'run_mpi_cmd pcc2hist {" ".join(args)}')
 
-    def __call__(self, *args, **kwargs):
-        self.input.write_nml_file()
+    def __call__(
+        self, runtime
+    ):  # runtime is a ModelRun, which can't be imported due to circularity
+        self.input.write_nml_file(Path(runtime.staging_dir))

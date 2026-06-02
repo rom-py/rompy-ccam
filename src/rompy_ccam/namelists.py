@@ -1,8 +1,6 @@
 """Mixin for a config representing a namelist."""
 
 from typing import (
-    # Any,
-    Optional,
     Annotated,
 )
 from pathlib import Path
@@ -41,12 +39,12 @@ class CCAMNamelistConfig(CCAMRootConfig):
     nml_path: Annotated[
         Path,
         Field(
-            description="Path of the namelist (.nml) file to create.",
+            description="Path of the namelist (.nml) file to create, relative to the staging directory.",
         ),
         Output,
     ]
 
-    def write_nml_file(self, force=False):
+    def write_nml_file(self, staging_dir: Path, force=False):
         if self.nml_path is None:
             raise ValueError("nml_path must be defined before calling write_nml_file()")
 
@@ -64,4 +62,4 @@ class CCAMNamelistConfig(CCAMRootConfig):
         )
         nml = dump
         # nml = nml_prepare_dict(dump)
-        f90nml.write(nml, self.nml_path, force=force, sort=False),
+        f90nml.write(nml, staging_dir / self.nml_path, force=force, sort=False),
