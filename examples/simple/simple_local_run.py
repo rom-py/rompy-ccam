@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from rompy.core.time import TimeRange
 from rompy.model import ModelRun
 
-from rompy_ccam import CCAMConfig, CCAMWorkflowSequence, DEFAULT_CCAM_INSTALL
+from rompy_ccam import CCAMConfig
 from rompy_ccam.default_workflow import CCAMDefaultWorkflow
 from rompy_ccam.ccam.globpea import (
     GlobpeaConfig,
     GlobpeaNamelistConfig,
     GlobpeaNamelistConfigCardin,
-    GlobpeaLeapMode,
     GlobpeaGridresRecommendedTimestep,
-    GlobpeaNamelistConfigTurb,
-    GlobpeaNamelistConfigSkyin,
     GlobpeaNamelistConfigDatafile,
-    GlobpeaNamelistConfigKuo,
 )
 from rompy_ccam.ccam.terread import (
     TerreadConfig,
@@ -26,7 +23,6 @@ from rompy_ccam.ccam.igbpveg import (
     IgbpvegNamelistConfigVeg,
     IgbpvegNamelistConfig,
     IgbpvegConfig,
-    IgbpvegOutputMode,
 )
 from rompy_ccam.ccam.cdfvidar import (
     CdfvidarConfig,
@@ -44,16 +40,47 @@ from rompy_ccam.ccam.pcc2hist import (
 def main():
     """Run a simple workflow"""
     start = datetime(2026, 5, 29)
-    end = datetime(2026, 6, 2)
-    interval: timedelta = 1  # hourly time step
+    end = datetime(2026, 5, 30)
+    centre_lon = 148.238
+    centre_lat = -34.77
+    interval: timedelta = 6  # 6-hourly time step
     times = TimeRange(start=start, end=end, interval=interval, include_end=False)
     run_time_seconds = int((end - start).total_seconds())
     resolution_km = 25.0
+    count = 48
     dt = GlobpeaGridresRecommendedTimestep(resolution_km)
 
-    terread = TerreadConfig()
-    igbpveg = IgbpvegConfig()
-    cdfvidar = CdfvidarConfig()
+    terread = TerreadConfig(
+        input=TerreadNamelistConfig(
+            topnml=TerreadNamelistConfigTop(
+                il=count,
+                rlong0=centre_lon,
+                rlat0=centre_lat,
+                do1km=False,
+                do250=False,
+                filepath10km=Path("data"),
+            ),
+        ),
+    )
+
+    igbpveg = IgbpvegConfig(
+        input=IgbpvegNamelistConfig(
+            vegnml=IgbpvegNamelistConfigVeg(
+                # Set the input topofile to terread's output topofile
+                topofile=terread.input.topnml.fileout,
+                landtypeout=Path("veg.nc"),
+            ),
+        ),
+    )
+
+    cdfvidar = CdfvidarConfig(
+        input=CdfvidarNamelistConfig(
+            gnml=CdfvidarNamelistConfigG(
+                # Set the input topofile to terread's output topofile
+                zsfil=terread.input.topnml.fileout,
+            ),
+        ),
+    )
 
     globpea = GlobpeaConfig(
         input=GlobpeaNamelistConfig(
@@ -62,8 +89,15 @@ def main():
                 dt=dt,
                 ntau=run_time_seconds / dt,
             ),
+            datafile=GlobpeaNamelistConfigDatafile(
+                # Set the input topofile to terread's output topofile
+                topofile=terread.input.topnml.fileout,
+                # Set the input vegetation file to igbpveg's output vegetation file
+                vegfile=igbpveg.input.vegnml.landtypeout,
+            ),
         ),
     )
+
     pcc2hist = Pcc2HistConfig()
 
     workflow = CCAMDefaultWorkflow(
@@ -71,7 +105,7 @@ def main():
         igbpveg=igbpveg,
         cdfvidar=cdfvidar,
         globpea=globpea,
-        pcc2hist=pcc2hist,
+        pcc2hists=[pcc2hist],
     )
     ccamConfig = CCAMConfig(workflow=workflow)
 
