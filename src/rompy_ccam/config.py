@@ -102,6 +102,10 @@ run_mpi_cmd() {{
     fi
 }}
 
+# igbpveg and cdfvidar use OMP, so they run faster with these:
+export OMP_NUM_THREADS=$NPROC
+export OMP_STACKSIZE=1024m
+
 # Execute in the directory in which this script is located
 cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")"
 
