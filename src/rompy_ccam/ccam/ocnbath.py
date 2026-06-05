@@ -6,7 +6,7 @@ from pydantic import Field
 from rompy_ccam import CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig, Input, Output
 
 
-class OcnbathConfigOcn(CCAMRootConfig):
+class OcnbathNamelistConfigOcn(CCAMRootConfig):
     """&ocnnml section of OCNBATH config namelist. See https://research.csiro.au/ccam/software-and-model-configuration/ocnbath-bathymetry-and-river-routing/."""
 
     bathout: Annotated[
@@ -55,17 +55,29 @@ class OcnbathConfigOcn(CCAMRootConfig):
     )
 
 
-class OcnbathConfig(CCAMExeConfig, CCAMNamelistConfig):
-    """Configuration for the ocnbath executable. To be output as a namelist file, e.g. ocnbath.nml."""
+class OcnbathNamelistConfig(CCAMNamelistConfig):
+    """Configuration for the ocnbath executable's configuration namelist."""
+
+    nml_path: Path = Path("ocnbath.nml")
+
+    ocnnml: OcnbathNamelistConfigOcn
+
+
+class OcnbathConfig(CCAMExeConfig):
+    """Configuration for the ocnbath executable, used to calculate ocean/lake bathymetry and also determine river routing."""
 
     model_type: Literal["ocnbath"] = "ocnbath"
+
+    workflow_step_description: Optional[str] = (
+        "Calculate ocean/lake bathymetry and determine river routing"
+    )
 
     s: Optional[int] = Field(
         default=None,
         description="Size of array used for reading ETOPO data (typically =500). The larger the array, the faster and more accurate the output.",
     )
 
-    ocnnml: OcnbathConfigOcn
+    input: OcnbathNamelistConfig
 
     def bash_invocation(self) -> str:
         args = []
