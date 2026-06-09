@@ -120,9 +120,18 @@ class AeroemissConfigAero(CCAMRootConfig):
     ]
 
 
-class AeroemissConfig(CCAMExeConfig, CCAMNamelistConfig):
-    """Configuration options to be given to the aeroemiss executable.
+class AeroemissConfigNamelist(CCAMNamelistConfig):
+    """Configuration options to be given to the aeroemiss executable."""
 
+    nml_path: Path = Path("aero.nml")
+
+    aero: AeroemissConfigAero = Field(
+        description="aero section of the aeroemiss namelist"
+    )
+
+
+class AeroemissConfig(CCAMExeConfig):
+    """
     AEROEMISS creates aerosol emissions for CCAM.  Prognostic aerosols can influence the CCAM simulation through direct effects on the simulated radiation, as well as indirect effects with the cloud microphysics.
     """
 
@@ -134,11 +143,15 @@ class AeroemissConfig(CCAMExeConfig, CCAMNamelistConfig):
         Output,
     ]
 
-    aero: AeroemissConfigAero
+    input: AeroemissConfigNamelist = Field(
+        description="configuration for aeroemiss, given as a namelist"
+    )
 
     def bash_invocation(self) -> str:
-        args = [f"-o {self.output}", f"< {self.nml_path}"]
+        args = [f"-o {self.output}", f"< {self.input.nml_path}"]
         return self.bash_prettify_invocation(f'run_cmd aeromiss {" ".join(args)}')
 
-    def __call__(self, *args, **kwargs):
-        self.write_nml_file()
+    def __call__(
+        self, runtime
+    ):  # runtime is a ModelRun, which can't be imported due to circularity
+        self.input.write_nml_file(Path(runtime.staging_dir))

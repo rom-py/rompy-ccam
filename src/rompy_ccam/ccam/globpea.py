@@ -1398,17 +1398,46 @@ class GlobpeaNamelistConfig(CCAMNamelistConfig):
     """Configuration for the globpea executable's configuration namelist."""
 
     # Set the default of nml_path, inherited from CCAMNamelistConfig, to 'input', which is globpea's default
-    nml_path: Path = Path("input")
+    nml_path: Path = Field(
+        default=Path("input"),
+        description="Path to the namelist file to be read by globpea",
+    )
 
-    defaults: GlobpeaNamelistConfigDefaults = GlobpeaNamelistConfigDefaults()
-    cardin: GlobpeaNamelistConfigCardin
-    skyin: GlobpeaNamelistConfigSkyin = GlobpeaNamelistConfigSkyin()
-    datafile: GlobpeaNamelistConfigDatafile = GlobpeaNamelistConfigDatafile()
-    kuonml: GlobpeaNamelistConfigKuo = GlobpeaNamelistConfigKuo()
-    turbnml: Optional[GlobpeaNamelistConfigTurb] = None
-    landnml: Optional[GlobpeaNamelistConfigLand] = None
-    mlonml: Optional[GlobpeaNamelistConfigMlo] = None
-    trfiles: Optional[GlobpeaNamelistConfigTrfiles] = None
+    defaults: GlobpeaNamelistConfigDefaults = Field(
+        default_factory=GlobpeaNamelistConfigDefaults,
+        description="defaults section of the globpea namelist",
+    )
+    cardin: GlobpeaNamelistConfigCardin = Field(
+        description="cardin section of the globpea namelist",
+    )
+    skyin: GlobpeaNamelistConfigSkyin = Field(
+        default_factory=GlobpeaNamelistConfigSkyin,
+        description="skyin section of the globpea namelist",
+    )
+    datafile: GlobpeaNamelistConfigDatafile = Field(
+        default_factory=GlobpeaNamelistConfigDatafile,
+        description="datafile section of the globpea namelist",
+    )
+    kuonml: GlobpeaNamelistConfigKuo = Field(
+        default_factory=GlobpeaNamelistConfigKuo,
+        description="kuonml section of the globpea namelist",
+    )
+    turbnml: Optional[GlobpeaNamelistConfigTurb] = Field(
+        default=None,
+        description="turbnml section of the globpea namelist",
+    )
+    landnml: Optional[GlobpeaNamelistConfigLand] = Field(
+        default=None,
+        description="landnml section of the globpea namelist",
+    )
+    mlonml: Optional[GlobpeaNamelistConfigMlo] = Field(
+        default=None,
+        description="mlonml section of the globpea namelist",
+    )
+    trfiles: Optional[GlobpeaNamelistConfigTrfiles] = Field(
+        default=None,
+        description="trfiles section of the globpea namelist",
+    )
 
 
 class GlobpeaConfig(CCAMExeConfig):
@@ -1417,13 +1446,18 @@ class GlobpeaConfig(CCAMExeConfig):
 
     model_type: Literal["globpea"] = "globpea"
 
-    workflow_step_description: Optional[str] = "Run the CCAM model"
+    workflow_step_description: Optional[str] = Field(
+        default="Run the CCAM model",
+    )
 
-    input: GlobpeaNamelistConfig
+    input: GlobpeaNamelistConfig = Field(
+        default_factory=GlobpeaNamelistConfig,
+        description="globpea configuration as a namelist",
+    )
 
     def __call__(
         self, runtime
-    ):  # runtime is a ModelRun, which can't be imported due to circularity
+    ):  # runtime is a ModelRun, which can't be imported due to circular dependency
         self.input.write_nml_file(Path(runtime.staging_dir))
 
     def bash_invocation(self) -> str:

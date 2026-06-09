@@ -62,4 +62,6 @@ class CCAMNamelistConfig(CCAMRootConfig):
         )
         nml = dump
         # nml = nml_prepare_dict(dump)
+        print(f"writing nml to {staging_dir / self.nml_path}:")
+        print(nml)
         f90nml.write(nml, staging_dir / self.nml_path, force=force, sort=False),

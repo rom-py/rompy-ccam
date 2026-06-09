@@ -83,8 +83,10 @@ class OcnbathConfig(CCAMExeConfig):
         args = []
         if self.s is not None:
             args.append(f"-s {self.s}")
-        args.append(f'< "{self.ocnnml.nml_path}"')
+        args.append(f'< "{self.input.nml_path}"')
         return self.bash_prettify_invocation(f'run_cmd ocnbath {" ".join(args)}')
 
-    def __call__(self, *args, **kwargs):
-        self.write_nml_file()
+    def __call__(
+        self, runtime
+    ):  # runtime is a ModelRun, which can't be imported due to circular dependency
+        self.write_nml_file(Path(runtime.staging_dir))

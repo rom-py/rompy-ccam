@@ -6,7 +6,7 @@ from rompy.core.time import TimeRange
 from rompy.model import ModelRun
 
 from rompy_ccam import CCAMConfig
-from rompy_ccam.default_workflow import CCAMDefaultWorkflow
+from rompy_ccam.ccam_workflow import CCAMWorkflow
 from rompy_ccam.ccam.globpea import (
     GlobpeaConfig,
     GlobpeaNamelistConfig,
@@ -58,7 +58,7 @@ def main():
                 rlat0=centre_lat,
                 do1km=False,
                 do250=False,
-                filepath10km=Path("data"),
+                filepath10km=Path(__file__).resolve().parent / "data",
             ),
         ),
     )
@@ -78,6 +78,7 @@ def main():
             gnml=CdfvidarNamelistConfigG(
                 # Set the input topofile to terread's output topofile
                 zsfil=terread.input.topnml.fileout,
+                t_file=Path("TODO"),
             ),
         ),
     )
@@ -100,7 +101,7 @@ def main():
 
     pcc2hist = Pcc2HistConfig()
 
-    workflow = CCAMDefaultWorkflow(
+    workflow = CCAMWorkflow(
         terread=terread,
         igbpveg=igbpveg,
         cdfvidar=cdfvidar,
@@ -124,10 +125,10 @@ def main():
     # 1. Run with local backend using custom command
     # logger.info("Running model with local backend...")
     # local_config = LocalConfig(
-    # timeout=3600,  # 1 hour timeout
-    # command="srun -n 8 ~/ccaminstall/bin/globpea > prnew.ccam"
+    # timeout = 3600,  # 1 hour timeout
+    # command = "srun -n 8 ~/ccaminstall/bin/globpea > prnew.ccam"
     # )
-    # success = model.run(backend=local_config)
+    # success = model.run(backend = local_config)
 
     # if not success:
     # logger.error("Model run failed")

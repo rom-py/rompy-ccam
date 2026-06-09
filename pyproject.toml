@@ -45,17 +45,6 @@ rompy_ccam = "rompy_ccam.cli:app"
 
 [project.entry-points."rompy.config"]
 ccam = "rompy_ccam.config:CCAMConfig"
-null = "rompy_ccam.rompy_ccam:NullConfig"
-composed = "rompy_ccam.rompy_ccam:ComposedConfig"
-default = "rompy_ccam.default_workflow:CCAMDefaultWorkflow"
-sequence = "rompy_ccam.workflow_sequence:CCAMWorkflowSequence"
-globpea = "rompy_ccam.ccam.globpea:GlobpeaConfig"
-terread = "rompy_ccam.ccam.terread:TerreadConfig"
-igbpveg = "rompy_ccam.ccam.igbpveg:IgbpvegConfig"
-cdfvidar = "rompy_ccam.ccam.cdfvidar:CdfvidarConfig"
-casafield = "rompy_ccam.ccam.casafield:CasafieldConfig"
-ocnbath = "rompy_ccam.ccam.ocnbath:OcnbathConfig"
-aeroemiss = "rompy_ccam.ccam.aeroemiss:AeroemissConfig"
 
 [project.entry-points."rompy.source"]
 # Register here any new source. For example:

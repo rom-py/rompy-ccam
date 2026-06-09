@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from pydantic import Field
 
-from .rompy_ccam import CCAMBaseConfig
+from .rompy_ccam import CCAMBaseConfig, CCAMExeConfig
 
 from .ccam.globpea import GlobpeaConfig
 from .ccam.terread import TerreadConfig
@@ -14,7 +14,7 @@ from .ccam.pcc2hist import Pcc2HistConfig
 from .ccam.casafield import CasafieldConfig
 
 
-class CCAMDefaultWorkflow(CCAMBaseConfig):
+class CCAMWorkflow(CCAMBaseConfig):
     """A fixed sequence of CCAM execution; a typical use of CCAM."""
 
     model_type: Literal["ccam-default-workflow"] = Field(
@@ -59,36 +59,33 @@ class CCAMDefaultWorkflow(CCAMBaseConfig):
     # pcc2hist may be run multiple times, depending on what output is required.
     pcc2hists: list[Pcc2HistConfig]
 
-    def __call__(
-        self, runtime
-    ) -> dict:  # runtime is a ModelRun, which can't be imported due to circularity
-        self.terread(runtime)
-        self.igbpveg(runtime)
-        if self.cdfvidar is not None:
-            self.cdfvidar(runtime)
-        if self.aeroemiss is not None:
-            self.aeroemiss(runtime)
-        if self.ocnbath is not None:
-            self.ocnbath(runtime)
-        if self.casafield is not None:
-            self.casafield(runtime)
-        self.globpea(runtime)
-        for pcc2hist in self.pcc2hists:
-            pcc2hist(runtime)
+    def executable_steps(self) -> list[CCAMExeConfig]:
+        """List all the CCAMExeConfigs that this class calls directly."""
+        return [
+            step
+            for step in (
+                [
+                    self.terread,
+                    self.igbpveg,
+                    self.cdfvidar,
+                    self.aeroemiss,
+                    self.ocnbath,
+                    self.casafield,
+                    self.globpea,
+                ]
+                + self.pcc2hists
+            )
+            if step is not None
+        ]
 
-    def bash_invocation(self) -> str:
-        r = self.terread.bash_invocation()
-        r += "\n" + self.igbpveg.bash_invocation()
-        if self.cdfvidar is not None:
-            r += "\n" + self.cdfvidar.bash_invocation()
-        if self.aeroemiss is not None:
-            r += "\n" + self.aeroemiss.bash_invocation()
-        if self.ocnbath is not None:
-            r += "\n" + self.ocnbath.bash_invocation()
-        if self.casafield is not None:
-            r += "\n" + self.casafield.bash_invocation()
-        r += "\n" + self.globpea.bash_invocation()
-        for pcc2hist in self.pcc2hists:
-            r += "\n" + pcc2hist.bash_invocation()
 
-        return r
+class CCAMInitialWorkflow(CCAMWorkflow):
+    """A CCAM initial, or top-level workflow."""
+
+    pass
+
+
+class CCAMNestedWorkflow(CCAMWorkflow):
+    """A CCAM nested, or downscaled workflow."""
+
+    pass

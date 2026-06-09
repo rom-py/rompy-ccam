@@ -18,7 +18,7 @@ from .frozenset_utils import frozenset_format_as_file_list
 
 
 class CCAMRootConfig(FileIOConfigAuto):
-    """A config class for rompy_ccam."""
+    """A config class for rompy_ccam. Automatically traverses itself and its children to find input and output files."""
 
     pass
 
@@ -40,27 +40,28 @@ class CCAMBaseConfig(CCAMRootConfig, BaseConfig):
 
     workflow_step_description: Optional[str] = None
 
-    def before(self, next: Self) -> Self:
-        if isinstance(self, NullConfig):
-            return next
-        if isinstance(next, NullConfig):
-            return self
-        return ComposedConfig(first=self, second=next)
+    def executable_steps(self) -> list["CCAMExeConfig"]:
+        """List all the CCAMExeConfigs that this class calls directly."""
+        return []
 
-    def __add__(self, other: Self) -> Self:
-        return self.before(other)
+    def bash_prettify_invocation(self, inv: str) -> str:
+        return f"""# {self.workflow_step_description}
+{inv}
+"""
 
-    def after(self, previous: Self) -> Self:
-        if isinstance(self, NullConfig):
-            return previous
-        if isinstance(previous, NullConfig):
-            return self
-        return ComposedConfig(first=previous, second=self)
+    def bash_invocation(self) -> str:
+        """Return a command to add to a bash script to invoke this class's list of executable steps."""
+        return "\n".join(step.bash_invocation() for step in self.executable_steps())
 
-    def __radd__(self, other: Self) -> Self:
-        return self.after(other)
+    def __call__(
+        self, runtime
+    ) -> dict:  # runtime is a ModelRun, which can't be imported due to circularity
+        for step in self.executable_steps():
+            step(runtime)
 
     def __str__(self) -> str:
+        steps = self.executable_steps()
+        step_summaries = "\n           ".join([str(step) for step in steps])
         return (
             f"CCAM workflow step: {type(self).__name__}"
             + (
@@ -70,32 +71,16 @@ class CCAMBaseConfig(CCAMRootConfig, BaseConfig):
             )
             + f"\n    (consumes {frozenset_format_as_file_list(self.input_files)})"
             + f"\n    (produces {frozenset_format_as_file_list(self.output_files)})"
+            + (f"\n    (calls {step_summaries})" if step_summaries != "" else "")
         )
 
 
 class CCAMExeConfig(CCAMBaseConfig):
     """Configuration for one of the CCAM executables."""
 
-    def bash_prettify_invocation(self, inv: str) -> str:
-        return f"""# {self.workflow_step_description}
-{inv}
-"""
-
     def bash_invocation(self) -> str:
         """Return a command to add to a bash script to invoke this CCAM executable with the given configuration."""
-        return f"TODO: implement bash_invocation for {type(self).__name__}"
-
-
-class NullConfig(CCAMBaseConfig):
-    """Represents a process which does nothing; consumes no inputs and produces no outputs."""
-
-    model_type: Literal["null"] = "null"
-
-    def __repr__(self) -> str:
-        return "NullConfig()"
-
-
-NULL_CONFIG = NullConfig()
+        raise ValueError(f"TODO: implement bash_invocation for {type(self).__name__}")
 
 
 class ComposedConfig(CCAMExeConfig):

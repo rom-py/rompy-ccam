@@ -18,7 +18,8 @@ class CdfvidarNamelistConfigG(CCAMRootConfig):
     @model_validator(mode="after")
     def check_inf_or_t_file(self) -> Self:
         if self.inf is None and self.t_file is None:
-            raise ValueError("Either 'inf' or 't_file' must be provided")
+            raise ValueError("Either 'inf' or 't_file' must be provided", self)
+        return self
 
     # TODO: set correct data types, defaults etc.
     kl: Optional[int] = Field(
@@ -209,7 +210,10 @@ class CdfvidarNamelistConfig(CCAMNamelistConfig):
 
     nml_path: Path = Path("cdfvidar.nml")
 
-    gnml: CdfvidarNamelistConfigG = CdfvidarNamelistConfigG()
+    gnml: CdfvidarNamelistConfigG = Field(
+        default_factory=CdfvidarNamelistConfigG,
+        description="gnml section of the cdfvidar configuration namelist",
+    )
 
 
 class CdfvidarConfig(CCAMExeConfig):
@@ -262,7 +266,10 @@ class CdfvidarConfig(CCAMExeConfig):
         "Convert weather or climate data into conformal cubic format"
     )
 
-    input: CdfvidarNamelistConfig = CdfvidarNamelistConfig()
+    input: CdfvidarNamelistConfig = Field(
+        default_factory=CdfvidarNamelistConfig,
+        description="Configuration for cdfvidar, given as a namelist",
+    )
 
     def bash_invocation(self) -> str:
         return self.bash_prettify_invocation(f"cdfvidar < {self.input.nml_path}")

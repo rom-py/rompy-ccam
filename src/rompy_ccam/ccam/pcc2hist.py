@@ -178,8 +178,14 @@ class Pcc2HistNamelistConfig(CCAMNamelistConfig):
 
     nml_path: Path = Path("cc.nml")
 
-    input: Optional[Pcc2HistNamelistConfigInput] = None
-    histnl: Optional[Pcc2HistNamelistConfigHistnl] = None
+    input: Optional[Pcc2HistNamelistConfigInput] = Field(
+        default=None,
+        description="input section of the pcc2hist namelist",
+    )
+    histnl: Optional[Pcc2HistNamelistConfigHistnl] = Field(
+        default=None,
+        description="histnl section of the pcc2hist namelist",
+    )
 
 
 class Pcc2HistConfig(CCAMExeConfig):
@@ -207,7 +213,10 @@ class Pcc2HistConfig(CCAMExeConfig):
         default=Pcc2HistVExtrap.NONE,
         description="The vertical extrapolation mode",
     )
-    input: Pcc2HistNamelistConfig = Pcc2HistNamelistConfig()
+    input: Pcc2HistNamelistConfig = Field(
+        default_factory=Pcc2HistNamelistConfig,
+        description="pcc2hist configuration given as a namelist",
+    )
 
     def bash_invocation(self) -> str:
         args = []

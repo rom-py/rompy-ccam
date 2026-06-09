@@ -1,7 +1,13 @@
+import sys
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 from typing import Optional, Annotated, Literal
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from rompy_ccam import Input, Output, CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig
 
@@ -32,7 +38,7 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
     )
     debug: Optional[bool] = Field(
         default=None,
-        description="Whether to enable debug mode.",
+        description="Whether to enable debug mode (terread's default is True).",
     )
     idia: Optional[int] = Field(
         default=None,
@@ -55,41 +61,48 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
         description="TODO",
     )
     fileout: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
+            default=Path("top.nc"),
             description="Output filename for the orography data on the cubic grid, to be used by CCAM.",
         ),
         Output,
     ]
     do1km: Optional[bool] = Field(
         default=None,
-        description="Set to ‘true’ to include 1 km DEM data in the output orography file.",
+        description="Set to ‘True’ to include 1 km DEM data in the output orography file (terread's default is True).",
     )
     do250: Optional[bool] = Field(
         default=None,
-        description="Set to ‘true’ to include 250m orography data for Australia in the output orography file.",
+        description="Set to ‘True’ to include 250m orography data for Australia in the output orography file (default is True).",
     )
     dosrtm: Optional[bool] = Field(
         default=None,
-        description="Set to ‘true’ to include 50m STRM data in the output orography file.  This requires the user to download at least some of the STRM data.",
+        description="Set to ‘True’ to include 50m STRM data in the output orography file.  This requires the user to download at least some of the STRM data (default is False).",
     )
     netout: Optional[bool] = Field(
         default=None,
-        description="Set to ‘true’ to use NetCDF formatted output files (recommended).",
+        description="Set to ‘True’ to use NetCDF formatted output files (recommended).",
     )
     topfilt: Optional[bool] = Field(
         default=None,
-        description="Set to ‘true’ to impose a 2*dx filter to smooth orography (recommended).",
+        description="Set to ‘True’ to impose a 2*dx filter to smooth orography (recommended).",
     )
     filepath10km: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
-            description="Location of 10 km input orography data (i.e., topo2).",
+            default=Path("."),
+            description="Directory containing the 10 km input orography data file, either topo2 or topo2.nc.",
         ),
         Input,
     ]
+
+    @model_validator(mode="after")
+    def check_filepath1km_set_if_do1km(self) -> Self:
+        if self.do1km and self.filepath1km is None:
+            raise ValueError("filepath1km must be set if do1km is True")
+        return self
+
     filepath1km: Annotated[
         Optional[Path],
         Field(
@@ -98,6 +111,13 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
         ),
         Input,
     ]
+
+    @model_validator(mode="after")
+    def check_filepath250m_set_if_do250(self) -> Self:
+        if self.do250 and self.filepath250m is None:
+            raise ValueError("filepath250m must be set if do250 is True")
+        return self
+
     filepath250m: Annotated[
         Optional[Path],
         Field(
@@ -106,6 +126,13 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
         ),
         Input,
     ]
+
+    @model_validator(mode="after")
+    def check_filepathsrtm_set_if_dosrtm(self) -> Self:
+        if self.dosrtm and self.filepathsrtm is None:
+            raise ValueError("filepathsrtm must be set if dosrtm is True")
+        return self
+
     filepathsrtm: Annotated[
         Optional[Path],
         Field(
@@ -114,10 +141,18 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
         ),
         Input,
     ]
+
     do250lsm: Optional[bool] = Field(
         default=None,
-        description="set to ‘true’ if wanting to use modis/srtm 250 m land sea mask data for high resolution region (Note: with this, possibly set siblsm=f in sibveg).",
+        description="set to ‘True’ if wanting to use modis/srtm 250 m land sea mask data for high resolution region (Note: with this, possibly set siblsm=f in sibveg).",
     )
+
+    @model_validator(mode="after")
+    def check_filepath250mlsm_set_if_do250lsm(self) -> Self:
+        if self.do250lsm and self.filepath250mlsm is None:
+            raise ValueError("filepath250mlsm must be set if do250lsm is True")
+        return self
+
     filepath250mlsm: Annotated[
         Optional[Path],
         Field(
@@ -132,7 +167,10 @@ class TerreadNamelistConfig(CCAMNamelistConfig):
     """Configuration for the terread executable's configuration namelist (.nml)."""
 
     nml_path: Path = Path("terread.nml")
-    topnml: TerreadNamelistConfigTop = TerreadNamelistConfigTop()
+    topnml: TerreadNamelistConfigTop = Field(
+        default_factory=TerreadNamelistConfigTop,
+        description="topnml section of the terread namelist",
+    )
 
 
 class TerreadConfig(CCAMExeConfig):
@@ -140,9 +178,14 @@ class TerreadConfig(CCAMExeConfig):
 
     model_type: Literal["terread"] = "terread"
 
-    workflow_step_description: Optional[str] = "Create orography and land-sea mask data"
+    workflow_step_description: Optional[str] = Field(
+        default="Create orography and land-sea mask data",
+    )
 
-    input: TerreadNamelistConfig = TerreadNamelistConfig()
+    input: TerreadNamelistConfig = Field(
+        default_factory=TerreadNamelistConfig,
+        description="terread configuration given as a namelist",
+    )
 
     def bash_invocation(self) -> str:
         return self.bash_prettify_invocation(f'terread < "{self.input.nml_path}"')

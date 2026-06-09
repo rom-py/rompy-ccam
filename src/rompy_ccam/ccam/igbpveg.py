@@ -39,7 +39,7 @@ class IgbpvegNamelistConfigVeg(CCAMRootConfig):
         Optional[Path],
         Field(
             default=None,
-            description="Output topography file.  This file is created for when the user specifies that the land-use dataset should determine the land-sea mask.  Hence newtopofile contains the modified topography file to account for the land-sea changes.",
+            description="Output topography file.  This file is created for when the user specifies that the land-use dataset should determine the land-sea mask, by setting `igbplsmask = True`.  Hence newtopofile contains the modified topography file to account for the land-sea changes.",
         ),
         Output,
     ]
@@ -162,7 +162,10 @@ class IgbpvegNamelistConfig(CCAMNamelistConfig):
 
     nml_path: Path = Path("igbpveg.nml")
 
-    vegnml: IgbpvegNamelistConfigVeg = IgbpvegNamelistConfigVeg()
+    vegnml: IgbpvegNamelistConfigVeg = Field(
+        default_factory=IgbpvegNamelistConfigVeg,
+        description="vegnml section of the igbpveg namelist",
+    )
 
 
 class IgbpvegConfig(CCAMExeConfig):
@@ -177,7 +180,10 @@ class IgbpvegConfig(CCAMExeConfig):
         description="Command-line option which controls how much data is processed in memory. Larger values of -s increase memory usage, but can speed-up igbpveg.",
     )
 
-    input: IgbpvegNamelistConfig = IgbpvegNamelistConfig()
+    input: IgbpvegNamelistConfig = Field(
+        default_factory=IgbpvegNamelistConfig,
+        description="igbpveg configuration given as a namelist",
+    )
 
     def bash_invocation(self) -> str:
         args = []
