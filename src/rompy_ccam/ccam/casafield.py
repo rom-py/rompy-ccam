@@ -3,7 +3,8 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from rompy_ccam import CCAMExeConfig, Input, Output
+from ..fileio_config import Input, Output
+from ..rompy_ccam import CCAMExeConfig
 
 
 class CasafieldConfig(CCAMExeConfig):

@@ -11,14 +11,10 @@ from typing import Optional, Annotated, Literal
 
 from pydantic import Field, field_serializer
 
-from rompy_ccam import (
-    Input,
-    Output,
-    Flag,
-    CCAMRootConfig,
-    CCAMExeConfig,
-    CCAMNamelistConfig,
-)
+from ..fileio_config import Input, Output
+from ..rompy_ccam import CCAMRootConfig, CCAMExeConfig
+from ..namelists import CCAMNamelistConfig
+from ..types import Flag
 
 
 class GlobpeaNamelistConfigDefaults(CCAMRootConfig):

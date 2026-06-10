@@ -8,7 +8,8 @@ from pathlib import Path
 import f90nml
 from pydantic import Field
 
-from rompy_ccam import CCAMRootConfig, Output
+from .fileio_config import Output
+from .rompy_ccam import CCAMRootConfig
 
 
 # def nml_prepare_dict(d: dict) -> dict:

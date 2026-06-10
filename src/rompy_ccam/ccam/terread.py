@@ -9,7 +9,9 @@ from pathlib import Path
 
 from pydantic import Field, model_validator
 
-from rompy_ccam import Input, Output, CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig
+from ..fileio_config import Input, Output
+from ..rompy_ccam import CCAMRootConfig, CCAMExeConfig
+from ..namelists import CCAMNamelistConfig
 
 
 class TerreadNamelistConfigTop(CCAMRootConfig):

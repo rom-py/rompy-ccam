@@ -9,7 +9,9 @@ from pathlib import Path
 
 from pydantic import Field
 
-from rompy_ccam import CCAMRootConfig, CCAMExeConfig, Input, Output, CCAMNamelistConfig
+from ..fileio_config import Input, Output
+from ..rompy_ccam import CCAMRootConfig, CCAMExeConfig
+from ..namelists import CCAMNamelistConfig
 
 
 class IgbpvegOutputMode(StrEnum):

@@ -3,7 +3,9 @@ from typing import Annotated, Optional, Literal
 
 from pydantic import Field
 
-from rompy_ccam import CCAMRootConfig, CCAMExeConfig, CCAMNamelistConfig, Input, Output
+from ..fileio_config import Input, Output
+from ..rompy_ccam import CCAMRootConfig, CCAMExeConfig
+from ..namelists import CCAMNamelistConfig
 
 
 class OcnbathNamelistConfigOcn(CCAMRootConfig):

@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Literal
 from pydantic import Field
 
-from rompy_ccam.rompy_ccam import CCAMBaseConfig
+from .rompy_ccam import CCAMBaseConfig
+from .ccam_workflow import CCAMWorkflow
 
 # from rompy_ccam.grid import CCAMGrid
 
