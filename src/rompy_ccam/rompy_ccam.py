@@ -1,13 +1,7 @@
 """Main module."""
 
-import sys
 from pathlib import Path
-from typing import Any, Optional, Literal
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
+from typing import Optional
 
 from pydantic import ConfigDict, Field
 
@@ -81,52 +75,3 @@ class CCAMExeConfig(CCAMBaseConfig):
     def bash_invocation(self) -> str:
         """Return a command to add to a bash script to invoke this CCAM executable with the given configuration."""
         raise ValueError(f"TODO: implement bash_invocation for {type(self).__name__}")
-
-
-class ComposedConfig(CCAMExeConfig):
-    """A config composed of two steps, `first` and `second`."""
-
-    first: CCAMExeConfig
-    second: CCAMExeConfig
-
-    model_type: Literal["composed"] = "composed"
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-
-        conflicting_output_files: frozenset[Path] = (
-            self.first.output_files & self.second.output_files
-        )
-        if conflicting_output_files:
-            raise ValueError(
-                f"Different steps of workflow would create/overwrite these files: {frozenset_format_as_file_list(conflicting_output_files)}:\n***First workflow:***\n{str(self.first)}\n***Second workflow:***\n{str(self.second)}"
-            )
-
-    @property
-    def input_files(self) -> frozenset[Path]:
-        # Return the first config's input files, plus any of the second config's input
-        # files which are *not* produced by the first config.
-        return self.first.input_files | (
-            self.second.input_files - self.first.output_files
-        )
-
-    @property
-    def output_files(self) -> frozenset[Path]:
-        # Return the union of the two sets of outputs
-        return self.first.output_files | self.second.output_files
-
-    def generate(self) -> str:
-        return self.first.generate() + self.second.generate()
-
-    def __repr__(self) -> str:
-        return f"ComposedConfig(first={self.first!r}, second={self.second!r})"
-
-    def __str__(self) -> str:
-        return f"{str(self.first)}\n{str(self.second)}"
-
-    def bash_invocation(self) -> str:
-        return self.first.bash_invocation() + "\n" + self.second.bash_invocation()
-
-    def __call__(self, *args, **kwargs):
-        self.first.__call__(args, kwargs)
-        self.second.__call__(args, kwargs)

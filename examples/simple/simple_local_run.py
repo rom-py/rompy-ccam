@@ -6,7 +6,7 @@ from rompy.core.time import TimeRange
 from rompy.model import ModelRun
 
 from rompy_ccam import CCAMConfig
-from rompy_ccam.ccam_workflow import CCAMWorkflow
+from rompy_ccam.ccam_workflow import CCAMInitialWorkflow
 from rompy_ccam.ccam.globpea import (
     GlobpeaConfig,
     GlobpeaNamelistConfig,
@@ -101,7 +101,7 @@ def main():
 
     pcc2hist = Pcc2HistConfig()
 
-    workflow = CCAMWorkflow(
+    workflow = CCAMInitialWorkflow(
         terread=terread,
         igbpveg=igbpveg,
         cdfvidar=cdfvidar,

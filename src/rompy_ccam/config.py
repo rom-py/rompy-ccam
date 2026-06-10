@@ -71,7 +71,7 @@ class CCAMConfig(CCAMBaseConfig):
         description="Model type discriminator",
     )
 
-    workflow: CCAMBaseConfig
+    workflow: CCAMWorkflow
 
     run_script: Path = Path("run.sh")
 
