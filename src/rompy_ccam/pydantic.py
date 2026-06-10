@@ -27,10 +27,19 @@ def type_is_optional_satisfying(
     )
 
 
+def origin_of_type_is_subclass(
+    t: type[Any], superclass: Union[type, Tuple[Union[type, Tuple[Any, ...]], ...]]
+) -> bool:
+    origin = get_origin(t)
+    if origin is not None:
+        t = origin
+    return isinstance(t, type) and issubclass(t, superclass)
+
+
 def type_is_subclass(
     superclass: Union[type, Tuple[Union[type, Tuple[Any, ...]], ...]],
 ) -> Callable[[type[Any]], bool]:
-    return lambda f: isinstance(f, type) and issubclass(f, superclass)
+    return lambda f: origin_of_type_is_subclass(f, superclass)
 
 
 def type_is_optional_subclass(

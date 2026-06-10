@@ -58,14 +58,14 @@ def find_paths_with_tag(
             )
             if (field_value := getattr(tree, field)) is not None
         ],
-        # Input files of all fields which are a subclass of `cls`
+        # Tagged files of all fields which are a subclass of `cls`
         frozenset_list_union(
             [
                 get_subtree_paths(getattr(tree, field))
                 for field in fields_with_type_satisfying(tree, type_is_subclass(cls))
             ]
         ),
-        # Input files of all fields which are an Optional[subclass of `cls`] and are not None
+        # Tagged files of all fields which are an Optional[subclass of `cls`] and are not None
         frozenset_list_union(
             [
                 get_subtree_paths(field_value)
