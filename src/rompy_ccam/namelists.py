@@ -1,8 +1,7 @@
 """Mixin for a config representing a namelist."""
 
-from typing import (
-    Annotated,
-)
+from collections import OrderedDict
+from typing import Annotated
 from pathlib import Path
 
 import f90nml
@@ -61,7 +60,9 @@ class CCAMNamelistConfig(CCAMRootConfig):
             exclude_none=True,  # Exclude field whose value is None
             # TODO: exclude empty list values as well somehow
         )
-        nml = dump
+        # If we don't convert to OrderedDict then f90nml will do so, after sorting it!
+        # We don't want it sorted as there is a specific order that e.g. globpea expects, and will crash if sections are in a different order.
+        nml = OrderedDict(dump)
         # nml = nml_prepare_dict(dump)
         print(f"writing nml to {staging_dir / self.nml_path}:")
         print(nml)
