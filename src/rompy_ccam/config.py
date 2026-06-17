@@ -83,7 +83,7 @@ class CCAMConfig(CCAMBaseConfig):
         """Generate the run script to run this configuration after the workspace has been generated."""
         return f"""#!/usr/bin/env bash
 
-# bash safe mode
+# bash strict mode
 set -euo pipefail
 
 # show us what commands are being called
@@ -91,7 +91,7 @@ set -x
 
 NPROC=${{MPIRUN_NPROC:-{self.default_nproc}}}
 CCAM_INSTALL=${{CCAM_INSTALL:-"{self.ccam_install}"}}
-CCAM_BIN="${{CCAM_INSTALL/bin}}"
+CCAM_BIN="${{CCAM_INSTALL}}/bin"
 
 PATH="${{CCAM_BIN}}:$PATH"
 
