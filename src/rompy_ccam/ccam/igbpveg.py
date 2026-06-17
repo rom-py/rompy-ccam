@@ -27,7 +27,7 @@ class IgbpvegNamelistConfigVeg(CCAMRootConfig):
     # TODO: set correct data types, defaults etc.
     month: Optional[int] = Field(
         default=None,
-        description="Month of the year (month=1-12) to process land-cover data.  Specifically, month determines what LAI data is used for the output file.  month=0 processes all months of the year.",
+        description="Month of the year (month=1-12) to process land-cover data.  Specifically, month determines what LAI data is used for the output file.  month=0 processes all months of the year. 0 is igbpveg's default.",
     )
     topofile: Annotated[
         Optional[Path],
@@ -54,42 +54,46 @@ class IgbpvegNamelistConfigVeg(CCAMRootConfig):
         Output,
     ]
     veginput: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
+            default=Path("gigbp2_0ll.img"),
             description="Specifies the location of the land-use classification input file (i.e., gigbp2_0ll.img).",
         ),
         Input,
     ]
     soilinput: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
+            default=Path("usda4.img"),
             description="Specify location of the soil texture input file (i.e., usda4.img).",
         ),
         Input,
     ]
     laiinput: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
-            description="Specify the directory where the LAI data is located (i.e., slai*.img).",
+            # we have set a default path, because igpbveg's default is the empty string,
+            # so it ends up looking for e.g. /slai01.img, which isn't helpful.
+            # TODO: we could put in some validation around this, to check that laiinput is
+            # a directory if month=0, otherwise a file, etc.
+            default=Path("."),
+            description="If month is 0, then this specifies the directory where the Leaf Area Index (LAI) data is located (i.e., slai[1-12].img). If month is between 1 and 12 then this specifies the LAI data file to use (e.g. slai03.img).",
         ),
         Input,
     ]
     albvisinput: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
-            description="Specify the location of the visible soil albedo input file (i.e., salbvis223.img).",
+            default=Path("salbvis_landcover2020.img.nc"),
+            description="Specify the location of the visible soil albedo input file (e.g. salbvis223.img).",
         ),
         Input,
     ]
     albnirinput: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
-            description="Specify the location of the near-infrared soil albedo input file (i.e., salbnir223.img).",
+            default=Path("salbnir_landcover2020.img.nc"),
+            description="Specify the location of the near-infrared soil albedo input file (e.g., salbnir223.img).",
         ),
         Input,
     ]
@@ -177,8 +181,8 @@ class IgbpvegConfig(CCAMExeConfig):
 
     workflow_step_description: Optional[str] = "Produce land-cover dataset"
 
-    s: Optional[int] = Field(
-        default=None,
+    s: int = Field(
+        default=500,
         description="Command-line option which controls how much data is processed in memory. Larger values of -s increase memory usage, but can speed-up igbpveg.",
     )
 
@@ -188,10 +192,7 @@ class IgbpvegConfig(CCAMExeConfig):
     )
 
     def bash_invocation(self) -> str:
-        args = []
-        if self.s is not None:
-            args.append(f"-s {self.s}")
-        args.append(f'< "{self.input.nml_path}"')
+        args = [f"-s {self.s}", f'< "{self.input.nml_path}"']
         return self.bash_prettify_invocation(f'igbpveg {" ".join(args)}')
 
     def __call__(

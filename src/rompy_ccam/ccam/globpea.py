@@ -37,114 +37,183 @@ class GlobpeaLeapMode(IntEnum):
 class GlobpeaPrecon(IntEnum):
     """Methods for solving the Helmholtz equation"""
 
-    PRECON_MULTI_GRID = -10000
-    PRECON_CONJUGATE_GRADIENT = 0
-    PRECON_SOR = -3900
+    MULTI_GRID = -10000
+    CONJUGATE_GRADIENT = 0
+    SOR = -3900
 
 
 class GlobpeaDynamics(IntEnum):
     """Allows for hydrostatic and non-hydrostatic dynamics."""
 
-    DYNAMICS_HYDROSTATIC = 0
-    DYNAMICS_NON_HYDROSTATIC = 5
+    HYDROSTATIC = 0
+    NON_HYDROSTATIC = 5
 
 
 class GlobpeaHorizontalDiffusion(IntEnum):
     """Method used for horizontal diffusion"""
 
-    HORIZONTAL_DIFFUSION_SMAGORINSKY = 0
-    HORIZONTAL_DIFFUSION_DEFORMATION = 1
-    HORIZONTAL_DIFFUSION_DEFORMATION2 = 2
-    HORIZONTAL_DIFFUSION_SMAG_TKE = 3
+    SMAGORINSKY = 0
+    DEFORMATION = 1
+    DEFORMATION2 = 2
+    SMAG_TKE = 3
 
 
 class GlobpeaHorizontalDiffusionTerms(IntEnum):
     """Controls horizontal diffusion for which terms"""
 
-    HORIZONTAL_DIFFUSION_TERMS_T_QG_TKE_U_V = 0
-    HORIZONTAL_DIFFUSION_TERMS_T_QG_TKE = -1
-    HORIZONTAL_DIFFUSION_TERMS_U_V = -2
-    HORIZONTAL_DIFFUSION_TERMS_QG = -3
-    HORIZONTAL_DIFFUSION_TERMS_T_QG_CLOUD_TKE_AEROSOLS = -4
-    HORIZONTAL_DIFFUSION_TERMS_T = -5
-    HORIZONTAL_DIFFUSION_TERMS_T_QG = -6
+    T_QG_TKE_U_V = 0
+    T_QG_TKE = -1
+    U_V = -2
+    QG = -3
+    T_QG_CLOUD_TKE_AEROSOLS = -4
+    T = -5
+    T_QG = -6
 
 
 class GlobpeaMassFixer(IntEnum):
     """Mass fixer algorithm to use (if any)."""
 
-    MFIX_OFF = 0
-    MFIX_SEA_LEVEL_PRESSURE = -1
-    MFIX_SURFACE_PRESSURE_1 = 1
-    MFIX_SURFACE_PRESSURE_2 = 2
-    MFIX_SURFACE_PRESSURE_3 = 3
+    OFF = 0
+    SEA_LEVEL_PRESSURE = -1
+    SURFACE_PRESSURE_1 = 1
+    SURFACE_PRESSURE_2 = 2
+    SURFACE_PRESSURE_4 = 3
 
 
 class GlobpeaQGFix(IntEnum):
     """Correction for saturated air."""
 
-    QGFIX_DISABLED = -1
-    QGFIX_INTERNAL_CHECKS = 0
-    QGFIX_REMOVE_NEGATIVE_MOISTURE = 1
-    QGFIX_REMOVE_SATURATED_MOISTURE = 2
+    DISABLED = -1
+    INTERNAL_CHECKS = 0
+    REMOVE_NEGATIVE_MOISTURE = 1
+    REMOVE_SATURATED_MOISTURE = 2
 
 
 class GlobpeaFarFieldNudging(IntEnum):
     """Far-field nudging options."""
 
-    NBD_OFF = 0
-    NBD_FAR_FIELD = 1
-    NBD_LINEARLY_INCREASING_PANEL_4 = -1
-    NBD_QUADRATICALLY_INCREASING_PANEL_4 = -2
-    NBD_FAR_FIELD_NO_PANEL_1 = -3
-    NBD_FAR_FIELD_2_NO_PANEL_1 = -4
-    NBD_FAR_FIELD_SOME_PANEL_1 = -5
-    NBD_1_WAY_NESTING = -6
-    NBD_FAR_FIELD_3_NO_PANEL_1 = -7
-    NBD_FAR_FIELD_NO_PANEL_1_SEPARATE_DAVU = 3
-    NBD_FAR_FIELD_2_NO_PANEL_1_SEPARATE_DAVU = 4
-    NBD_FAR_FIELD_SOME_PANEL_1_SEPARATE_DAVU = 5
-    NBD_1_WAY_NESTING_SEPARATE_DAVU = 6
-    NBD_FAR_FIELD_3_NO_PANEL_1_SEPARATE_DAVU = 7
+    OFF = 0
+    FAR_FIELD = 1
+    LINEARLY_INCREASING_PANEL_4 = -1
+    QUADRATICALLY_INCREASING_PANEL_4 = -2
+    FAR_FIELD_NO_PANEL_1 = -3
+    FAR_FIELD_2_NO_PANEL_1 = -4
+    FAR_FIELD_SOME_PANEL_1 = -5
+    ONE_WAY_NESTING = -6
+    FAR_FIELD_3_NO_PANEL_1 = -7
+    FAR_FIELD_NO_PANEL_1_SEPARATE_DAVU = 3
+    FAR_FIELD_2_NO_PANEL_1_SEPARATE_DAVU = 4
+    FAR_FIELD_SOME_PANEL_1_SEPARATE_DAVU = 5
+    ONE_WAY_NESTING_SEPARATE_DAVU = 6
+    FAR_FIELD_3_NO_PANEL_1_SEPARATE_DAVU = 7
+
+
+class GlobpeaEnsembleMode(IntEnum):
+    """Ensemble mode."""
+
+    OFF = 0
+    CONTROL = 1
+    BREEDING = 2
+
+
+class GlobpeaNMLO(IntEnum):
+    OFF = 0
+    SINGLE_COLUMN = -1
+    DYNAMICAL_OCEAN = -3
+
+
+class GlobpeaLandSurfaceModel(IntEnum):
+    ORIGINAL = 3
+    MODIS = 5
+    CABLE = 7
+
+
+class GlobpeaUrbanCanopyModel(IntEnum):
+    NO_URBAN = 0
+    URBAN_SAVE_IN_RESTART_FILE = 1
+    URBAN_SAVE_IN_HISTORY_AND_RESTART_FILES = -1
+
+
+class GlobpeaCloudOverlapMode(IntEnum):
+    RANDOM_OVERLAP = 0
+    MAXIMUM_RANDOM_OVERLAP = 1
+    MAXIMUM_RANDOM_OVERLAP_WITHOUT_BULK_CLOUD_PROPERTIES = 2
+
+
+class GlobpeaRadiationModel(IntEnum):
+    ORIGINAL = 4
+    SEA_ESF = 5  # from GFDL AM3
+
+
+class GlobpeaAerosolModel(IntEnum):
+    NO_AEROSOL_EFFECTS = 0
+    PRESCRIBED_SO4_BURDEN_AND_DIRECT_AEROSOL_EFFECTS = (
+        1  # Typically used for CMIP3 experiments
+    )
+    PRESCRIBED_SO4_BURDEN_AND_DIRECT_AEROSOL_EFFECTS_ADDITIONAL_INFO_IN_HISTORY_FILE = (
+        -1
+    )
+    PROGNOSTIC_AEROSOLS = 2  # Prognostic (single moment) aerosols based on CSIRO Mk3.6.  Includes direct and indirect effects and is typically used for CMIP5 experiments.
+    PROGNOSTIC_AEROSOLS_ADDITIONAL_INFO_IN_HISTORY_FILE = -2
+    PROGNOSTIC_AEROSOLS_PLUS_IN_RAIN = 3  # Same as for PROGNOSTIC_AEROSOLS but also includes aerosols in prognostic rain.  This option is currently experimental.
+    PROGNOSTIC_AEROSOLS_PLUS_IN_RAIN_ADDITIONAL_INFO_IN_HISTORY_FILE = -3
+
+
+class GlobpeaBoundaryLayerTurbulenceModel(IntEnum):
+    LOCAL_RI = 3
+    EDMF_WITH_KE_CLOSURE = 6
+    JING = 7
+
+
+class GlobpeaCounterGradientModel(IntEnum):
+    OFF = 0
+    DIAGNOSED = 6
+    MASS_FLUX = 7
+
+
+class GlobpeaProcessRateMode(IntEnum):
+    OFF = 0
+    MICROPHYSICS_DIAGNOSTICS = 2  # value 1 was commented out at time of writing
+
+
+class GlobpeaOutputFilePrecision(IntEnum):
+    SHORT = 0
+    FLOAT = 1
 
 
 class GlobpeaNamip(IntEnum):
     """Controls source of Sea Surface Temperatures (SSTs) and Sea-ice."""
 
-    NAMIP_NO_INPUT_DATA = 0  # No input data
-    NAMIP_PERSISTED_SST_ANOMALIES = -1  # Persisted SST anomalies
-    NAMIP_PWCB_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
+    NO_INPUT_DATA = 0  # No input data
+    PERSISTED_SST_ANOMALIES = -1  # Persisted SST anomalies
+    PWCB_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
         1  # Use PWCB intepolation for SSTs, diagnose sea-ice
     )
-    NAMIP_LINEAR_INTERPOLATE_SSTS_AND_SEA_ICE = 2  # Use linear interpolation for SSTs and sea-ice (assumes pre-processing of monthly SSTs)
-    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_MONTHLY = (
+    LINEAR_INTERPOLATE_SSTS_AND_SEA_ICE = 2  # Use linear interpolation for SSTs and sea-ice (assumes pre-processing of monthly SSTs)
+    PWCB_INTERPOLATE_SSTS_SEA_ICE_MONTHLY = (
         3  # Use PWCB interpolation for SSTs and sea-ice equals supplied monthly value
     )
-    NAMIP_PWCB_INTERPOLATE_SSTS_AND_SEA_ICE = (
-        4  # Use PWCB interpolation for SSTs and sea-ice
-    )
-    NAMIP_PWCB_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
+    PWCB_INTERPOLATE_SSTS_AND_SEA_ICE = 4  # Use PWCB interpolation for SSTs and sea-ice
+    PWCB_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
         5  # Use PWCB interpolation for SSTs, sea-ice and salinity
     )
-    NAMIP_JMC_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
+    JMC_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
         11  # Use JMc interpolation for SSTs, diagnose sea-ice
     )
-    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_MONTHLY = (
+    JMC_INTERPOLATE_SSTS_SEA_ICE_MONTHLY = (
         13  # Use JMc interpolation for SSTs and sea-ice equals supplied monthly
     )
-    NAMIP_JMC_INTERPOLATE_SSTS_AND_SEA_ICE = (
-        14  # Use JMc interpolation for SSTs and sea-ice
-    )
-    NAMIP_JMC_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
+    JMC_INTERPOLATE_SSTS_AND_SEA_ICE = 14  # Use JMc interpolation for SSTs and sea-ice
+    JMC_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
         15  # Use JMc interpolation for SSTs, sea-ice and salinity
     )
-    NAMIP_AMIP_INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
+    INTERPOLATE_SSTS_DIAGNOSE_SEA_ICE = (
         21  # Use approx linear AMIP interpolation for SSTs and diagnose sea-ice
     )
-    NAMIP_AMIP_INTERPOLATE_SSTS_AND_SEA_ICE = (
+    INTERPOLATE_SSTS_AND_SEA_ICE = (
         24  # Use approx linear AMIP interpolation for SSTs and sea-ice
     )
-    NAMIP_AMIP_INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
+    INTERPOLATE_SSTS_SEA_ICE_AND_SALINITY = (
         25  # Use approx linear AMIP interpolation for SSTs, sea-ice and salinity
     )
 
@@ -152,8 +221,8 @@ class GlobpeaNamip(IntEnum):
 class GlobpeaHelmholtzMethod(IntEnum):
     """Versions of D'Azevedo method to use in solving the Helmholtz equation."""
 
-    HELMMETH_DAZEVEDO_1 = 0  # !
-    HELMMETH_DAZEVEDO_STANDARD = 1
+    DAZEVEDO_1 = 0  # !
+    DAZEVEDO_STANDARD = 1
 
 
 def GlobpeaGridresRecommendedTimestep(
@@ -216,7 +285,7 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         return int(t.strftime("%H%M"))
 
     leap: GlobpeaLeapMode = Field(
-        default=GlobpeaLeapMode.NO_LEAP,
+        default=GlobpeaLeapMode.LEAP,
         description="To use leap years (LEAP) or to use 365-day calendar (NO_LEAP).",
     )
 
@@ -224,9 +293,9 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         # These are the same constraints as enforced by globpea; see https://github.com/csiro/ccam-ccam/blob/b09005f35f53ddedb23f671beb64364143f65acb/main/general/config_m.f90#L412
         gt=0,
         le=3600,
-        description="Simulation time-step in seconds. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/dt/ for more details.",
+        description="Simulation time-step in seconds. Call GlobpeaGridresRecommendedTimestep() with your simulation's resolution to get an appropriate value. Note that the recommended time-step is specified as a factor of 1 hour. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/dt/ for more details.",
     )
-    # TODO: something should calculate this as outputdt / dt
+    # TODO: something should calculate this as (time.interval.total_seconds()) / dt
     nwt: Optional[int] = Field(
         default=None,
         gt=0,
@@ -273,9 +342,22 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         default=None,
         description="Recomputes near-surface diagnostics for consistency in output (rescrn=1).",
     )
+
+    # Parallel computing
+
     maxtilesize: Optional[int] = Field(
         default=None,
         description="Controls vector length for physics routines. Can lead to speed improvements when optimized for the host computer.",
+    )
+
+    async_length: Optional[int] = Field(
+        default=None,
+        description="Controls number of asynchronous streams for computing on GPUs.",
+    )
+
+    nagg: Optional[int] = Field(
+        default=None,
+        description="Controls the maximum number of tracers sent in a single MPI message.",
     )
 
     # Dynamical core
@@ -407,50 +489,41 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         default=None,
         description="Nudging strength for the ocean model. mloalpha=10 is full strength, mloalpha=20 is half strength, etc.",
     )
-    # TODO
-    nud_p: Optional[int] = Field(
+    nud_p: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_p=1) or off (nud_p=0) nudging for surface pressure.",
+        description="Turn on or off nudging for surface pressure.",
     )
-    # TODO
-    nud_t: Optional[int] = Field(
+    nud_t: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_t=1) or off (nud_t=0) nudging for air temperture.",
+        description="Turn on or off nudging for air temperture.",
     )
-    # TODO
-    nud_q: Optional[int] = Field(
+    nud_q: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_q=1) or off (nud_q=0) nudging for water vapor.",
+        description="Turn on or off nudging for water vapor.",
     )
-    # TODO
-    nud_uv: Optional[int] = Field(
+    nud_uv: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_uv=1) or off (nud_uv=0) nudging for winds.",
+        description="Turn on or off nudging for winds.",
     )
-    # TODO
-    nud_aero: Optional[int] = Field(
+    nud_aero: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_aero=1) or off (nud_aero=0) nudging for aerosols.",
+        description="Turn on or off nudging for aerosols.",
     )
-    # TODO
-    nud_sst: Optional[int] = Field(
+    nud_sst: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_sst=1) or off (nud_sst=0) nudging for ocean potential temperature.",
+        description="Turn on or off nudging for ocean potential temperature.",
     )
-    # TODO
-    nud_sss: Optional[int] = Field(
+    nud_sss: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_sss=1) or off (nud_sss=0) nudging for ocean salinity.",
+        description="Turn on or off nudging for ocean salinity.",
     )
-    # TODO
-    nud_ouv: Optional[int] = Field(
+    nud_ouv: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_ouv=1) or off (nud_ouv=0) nudging for ocean currents.",
+        description="Turn on or off nudging for ocean currents.",
     )
-    # TODO
-    nud_sfh: Optional[int] = Field(
+    nud_sfh: Optional[Flag] = Field(
         default=None,
-        description="Turn on (nud_sfh=1) or off (nud_sfh=0) nudging for ocean surface height.",
+        description="Turn on or off nudging for ocean surface height.",
     )
     # TODO
     nud_hrs: Optional[int] = Field(
@@ -496,16 +569,14 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
     # Ensemble
 
     # TODO
-    ensemble_mode: Optional[int] = Field(
+    ensemble_mode: Optional[GlobpeaEnsembleMode] = Field(
         default=None,
-        description="Mode for CCAM ensemble with 0=off, 1=control and 2=breeding.",
+        description="Mode for CCAM ensemble",
     )
-    # TODO
     ensemble_period: Optional[int] = Field(
         default=None,
         description="Update period for ensemble members (mins). Default value is 720 mins.",
     )
-    # TODO
     ensemble_rsfactor: Optional[float] = Field(
         default=None,
         description="Scale factor for ensemble perturbation. 1.=no-scaling. Default value is 0.1.",
@@ -513,40 +584,33 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
 
     # Oceans, lakes and rivers
 
-    # TODO
-    nmlo: Optional[int] = Field(
+    nmlo: Optional[GlobpeaNMLO] = Field(
         default=None,
-        description="Options for ocean model. nmlo=0 for off, nmlo=-1 for single column ocean and nmlo=-3 for dynamical ocean.",
+        description="Options for ocean model.",
     )
-    # TODO
     ol: Optional[int] = Field(
         default=None,
         description="Number of vertical levels for the ocean model.",
     )
-    # TODO
     tss_sh: Optional[float] = Field(
         default=None,
         description="Sea Surface Temperature skin temperature enhancement factor.",
     )
-    # TODO
-    nriver: Optional[int] = Field(
+    nriver: Optional[Flag] = Field(
         default=None,
-        description="Turns on (nriver=-1) or off (nriver=0) the river routing model.",
+        description="Turns on or off the river routing model.",
     )
 
     # Land, urban and carbon
 
-    # TODO
-    nsib: Optional[int] = Field(
+    nsib: Optional[GlobpeaLandSurfaceModel] = Field(
         default=None,
-        description="Selects the land-surface model with nsib=3 for original, nsib=5 for MODIS and nsib=7 for CABLE.",
+        description="Selects the land-surface model.",
     )
-    # TODO
-    nurban: Optional[int] = Field(
+    nurban: Optional[GlobpeaUrbanCanopyModel] = Field(
         default=None,
-        description="Turns on (nurban=-1) or off (nurban=0) the urban canopy model (aTEB).",
+        description="Turns on or off the urban canopy model (aTEB).",
     )
-    # TODO
     vmodmin: Optional[float] = Field(
         default=None,
         description="Minimum wind speed for calculating surface fluxes in m/s.",
@@ -554,50 +618,62 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
     # TODO
     nsigmf: Optional[int] = Field(
         default=None,
-        description="Modifies soil behaviour with nsib=3 or nsib=5 to essentially increase the heat capacity. Not recommended for nrad=5.",
+        description="Modifies soil behaviour with nsib=GlobpeaLandSurfaceModel.ORIGINAL or nsib=GlobpeaLandSurfaceModel.MODIS to essentially increase the heat capacity. Not recommended for GlobpeaRadiationModel=SEA_ESF.",
     )
     qgmin: Optional[float] = Field(
         default=None,
-        description="TODO",
+        description="Minimum water vapour mixing ratio.",
     )
-    nmr: Optional[int] = Field(
+    nmr: Optional[GlobpeaCloudOverlapMode] = Field(
         default=None,
-        description="TODO",
+        description="Cloud overlap mode.",
     )
-    # TODO
-    jalbfix: Optional[int] = Field(
+    jalbfix: Optional[Flag] = Field(
         default=None,
-        description="Modifies albedo with nsib=3 or nsib=5 to increase the albedo over sandy soils. Not recommended for nrad=5.",
+        description="Modifies albedo with nsib=GlobpeaLandSurfaceModel.ORIGINAL or nsib=GlobpeaLandSurfaceModel.MODIS to increase the albedo over sandy soils. Not recommended for GlobpeaRadiationModel=SEA_ESF.",
     )
 
     # Radiation and aerosols
 
-    # TODO
-    nrad: Optional[int] = Field(
+    nrad: Optional[GlobpeaRadiationModel] = Field(
         default=None,
-        description="Radiation model with nrad=4 for original and nrad=5 for SEA-ESF (from GFDL AM3).",
+        description="Radiation model.",
     )
-    # TODO
-    iaero: Optional[int] = Field(
+    iaero: Optional[GlobpeaAerosolModel] = Field(
         default=None,
-        description="Specifies aerosol model. See https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/cardin-general-switches/iaero/ for further details.",
+        description="Specifies aerosol model.",
+    )
+    process_rate_mode: Optional[GlobpeaProcessRateMode] = Field(
+        default=None,
+        description="Include additional cloud microphysics output.",
     )
     ch_dust: Optional[float] = Field(
         default=None,
-        description="TODO",
+        description="Transfer coefficient for natural sources of emissions, in kg*s2/m5.",
     )
 
-    # aboundary layer turbulent mixing
+    # Boundary layer turbulent mixing
 
-    # TODO
-    nvmix: Optional[int] = Field(
+    nvmix: Optional[GlobpeaBoundaryLayerTurbulenceModel] = Field(
         default=None,
-        description="Boundary layer turbulence model with nvmix=3/7 for local-Ri and nvmix=6 for EDMF with k-e closure.",
+        description="Boundary layer turbulence model.",
     )
-    # TODO
-    nlocal: Optional[int] = Field(
+
+    @model_validator(mode="after")
+    def check_nvmix_edmf_if_max_flux(self) -> Self:
+        if (
+            self.nlocal == GlobpeaCounterGradientModel.MASS_FLUX
+            and self.nvmix
+            is not GlobpeaBoundaryLayerTurbulenceModel.EDMF_WITH_KE_CLOSURE
+        ):
+            raise ValueError(
+                "nvmix must be EDMF_WITH_KE_CLOSURE if nlocal is MASS_FLUX"
+            )
+        return self
+
+    nlocal: Optional[GlobpeaCounterGradientModel] = Field(
         default=None,
-        description="Counter gradient model with nlocal=0 for off, nlocal=6 for diagnosed and nlocal=7 (with nvmix=6) for mass-flux.",
+        description="Counter gradient model with nlocal=0 for off, nlocal=6 for diagnosed and nlocal=7 (with nvmix=EDMF_WITH_KE_CLOSURE) for mass-flux.",
     )
 
     # Station output
@@ -611,65 +687,53 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         default=None,
         description="Number of output stations.",
     )
-    # TODO
-    slon: Optional[int] = Field(
+    slon: Optional[list[float]] = Field(
         default=None,
         description="List of longitudes for station output.",
     )
-    # TODO
-    slat: Optional[int] = Field(
+    slat: Optional[list[float]] = Field(
         default=None,
         description="List of latitudes for station output.",
     )
 
     # File input/output
 
-    # TODO
     localhist: Optional[bool] = Field(
         default=None,
-        description="Allows CCAM to write output in parallel. localhist=.true. can lead to significant speed improvements for higher numbers of CPUs.",
+        description="Allows CCAM to write output in parallel. localhist=True can lead to significant speed improvements for higher numbers of CPUs.",
     )
-    # TODO
     unlimitedhist: Optional[bool] = Field(
         default=None,
-        description="Use unlimited dimension for output file with unlimitedhist=.true. There can be some speed advantages for using unlimitedhist=.false. although visualizing the data can be difficult.",
+        description="Use unlimited dimension for output file with unlimitedhist=True There can be some speed advantages for using unlimitedhist=False although visualizing the data can be difficult.",
     )
-    # TODO
     synchist: Optional[bool] = Field(
         default=None,
-        description="Flush output buffers after writing data with synchist=true, which can be useful for debugging.",
+        description="Flush output buffers after writing data with synchist=True, which can be useful for debugging.",
     )
-    # TODO
+
+    @model_validator(mode="after")
+    def check_compression_range(self) -> Self:
+        if self.compression is not None and (
+            self.compression < 0 or self.compression > 9
+        ):
+            return ValueError("compression must be in the range [0-9]")
+        return self
+
     compression: Optional[int] = Field(
         default=None,
         description="Compression level for output from 0 (no compression) to 9 (high compression). compression=1 is recommended.",
     )
-    # TODO
-    hp_output: Optional[int] = Field(
+    hp_output: Optional[GlobpeaOutputFilePrecision] = Field(
         default=None,
-        description="Output file precision (0=short, 1=float). Using hp_output=0 for short precision can halve the file size.",
+        description="Output file precision. Using hp_output=GlobpeaOutputFilePrecision.SHORT for short precision can halve the file size.",
     )
-
-    # Duplicated in Turbnml. TODO: work out where they truly belong
-    ngwd: Optional[int] = Field(
+    pil_single: Optional[int] = Field(
         default=None,
-        description="Coefficient to limit launching height.",
+        description="Size to subdivide input host data for parallel processing.",
     )
-    helim: Optional[float] = Field(
+    chunk_time: Optional[int] = Field(
         default=None,
-        description="Maximum launching height.",
-    )
-    fc2: Optional[float] = Field(
-        default=None,
-        description="Coefficient for calculating Froude number.",
-    )
-    sigbot_gwd: Optional[float] = Field(
-        default=None,
-        description="Lowest sigma level for gravity wave drag.",
-    )
-    alphaj: Optional[float] = Field(
-        default=None,
-        description="Coefficient for Chouinard et al model.",
+        description="Number of time-steps to include in a chunk for 2D output variables.",
     )
 
 
@@ -782,9 +846,8 @@ class GlobpeaNamelistConfigDatafile(CCAMRootConfig):
     # Initial conditions and output
 
     ifile: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
             description="Initial conditions in conformal cubic format.  Missing data can be diagnosed under some circumstances (e.g., soil temperatures).",
         ),
         Input,
@@ -1229,8 +1292,7 @@ class GlobpeaNamelistConfigTurb(CCAMRootConfig):
         default=None,
         description="Maximum time-step for the k-e model.",
     )
-    # TODO
-    mintke: Optional[int] = Field(
+    mintke: Optional[float] = Field(
         default=None,
         description="Minimum value of turbulent kinetic energy.",
     )
@@ -1238,10 +1300,13 @@ class GlobpeaNamelistConfigTurb(CCAMRootConfig):
         default=None,
         description="Minimum value of eddy dissipation.",
     )
-    # TODO
-    minl: Optional[int] = Field(
+    minl: Optional[float] = Field(
         default=None,
-        description="maxl – Minimum and maximum length scale.",
+        description="Minimum length scale.",
+    )
+    maxl: Optional[float] = Field(
+        default=None,
+        description="Maximum length scale",
     )
 
     # Boundary layer mass flux
@@ -1252,28 +1317,32 @@ class GlobpeaNamelistConfigTurb(CCAMRootConfig):
         default=None,
         description="Coefficient for surface boundary condition .",
     )
-    # TODO
-    ent0: Optional[int] = Field(
+    ent0: Optional[float] = Field(
         default=None,
-        description="ent1 – Constants to define the entrainment parameterisation.",
+        description="Constant to define the entrainment parameterisation.",
+    )
+    ent1: Optional[float] = Field(
+        default=None,
+        description="Constant to define the entrainment parameterisation.",
     )
     # TODO
     entc0: Optional[int] = Field(
         default=None,
         description="dtrc0 – Entrainment and detrainment rates for saturated air.",
     )
-    # TODO
-    m0: Optional[int] = Field(
+    m0: Optional[float] = Field(
         default=None,
         description="Mass flux amplitude constant.",
     )
-    # TODO
-    b1: Optional[int] = Field(
+    b1: Optional[float] = Field(
         default=None,
-        description="b2 – Updraft entrainment and buoyancy coefficients.",
+        description="Updraft entrainment and buoyancy coefficient, along with b2.",
     )
-    # TODO
-    qcmf: Optional[int] = Field(
+    b2: Optional[float] = Field(
+        default=None,
+        description="Updraft entrainment and buoyancy coefficient, along with b1.",
+    )
+    qcmf: Optional[float] = Field(
         default=None,
         description="Critical mixing ratio for liquid water before autoconversion.",
     )
@@ -1457,6 +1526,6 @@ class GlobpeaConfig(CCAMExeConfig):
         self.input.write_nml_file(Path(runtime.staging_dir))
 
     def bash_invocation(self) -> str:
-        return self.bash_prettify_invocation(
-            f'run_mpi_cmd globpea -c "{self.input.nml_path}"'
-        )
+        # The default is to read from 'input', so don't specify it on the command-line if this is the case
+        args = f'-c "{self.input.nml_path}"' if self.input.nml_path != "input" else ""
+        return self.bash_prettify_invocation(f"run_mpi_cmd globpea {args}")

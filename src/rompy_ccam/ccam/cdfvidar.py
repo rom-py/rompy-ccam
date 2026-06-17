@@ -24,8 +24,7 @@ class CdfvidarNamelistConfigG(CCAMRootConfig):
         return self
 
     # TODO: set correct data types, defaults etc.
-    kl: Optional[int] = Field(
-        default=None,
+    kl: int = Field(
         description="Number of vertical levels.",
     )
     t_file: Annotated[
@@ -157,15 +156,15 @@ class CdfvidarNamelistConfigG(CCAMRootConfig):
         Input,
     ]
     vfil: Annotated[
-        Optional[Path],
+        Path,
         Field(
-            default=None,
+            default=Path("initialconditions.nc"),
             description="Output file for the conformal cubic grid.",
         ),
         Output,
     ]
-    sgml: list[float] = Field(
-        default=[],
+    sgml: Optional[list[float]] = Field(
+        default=None,
         description="List of sigma levels for vertical interpolation.",
     )
 
@@ -182,7 +181,11 @@ class CdfvidarNamelistConfigG(CCAMRootConfig):
         Field(default=None, description="TODO"),
         Input,
     ]
-    io_out: Optional[int] = Field(default=None, description="TODO")
+    io_out: Optional[int] = Field(
+        default=1,  # TODO: make an IntEnum for this?
+        description="Deprecated, but currently has to be set to something other than 3, because 3 is cdfvidar's default but throws an error if used!",
+    )
+
     nrh: Optional[int] = Field(default=None, description="TODO")
     mxcyc: Optional[int] = Field(default=None, description="TODO")
     debug: Optional[bool] = Field(default=None, description="TODO")

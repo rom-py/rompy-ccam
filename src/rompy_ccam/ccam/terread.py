@@ -34,8 +34,8 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
         default=None,
         description="Latitude corresponding to the centre of the variable resolution cubic grid.",
     )
-    schmidt: Optional[float] = Field(
-        default=None,
+    schmidt: float = Field(
+        # TODO: set a default? Or calculate it with an after validator?
         description="Schmidt factor that controls the amount of grid stretching ( 0 > schmidt >= 1).  A value of schmidt=1 indicates no stretching or a (quasi-) uniform global grid.  The lower the value of Schmidt, then the greater the amount of stretching.  Simulations without atmospheric nudging are not recommended to use schmidt<0.3.  Also grids with schmidt<0.005 can require modifications to the atmospheric nudging.  Note that the mathematical Schmidt factor is >=1, so this parameter is the inverse of the mathematical definition.",
     )
     debug: Optional[bool] = Field(
@@ -83,7 +83,10 @@ class TerreadNamelistConfigTop(CCAMRootConfig):
         description="Set to ‘True’ to include 50m STRM data in the output orography file.  This requires the user to download at least some of the STRM data (default is False).",
     )
     netout: Optional[bool] = Field(
-        default=None,
+        # default set to True even though terread's default is False;
+        # this is because this is the recommended setting, and is consistent
+        # with the default output file 'top.nc'.
+        default=True,
         description="Set to ‘True’ to use NetCDF formatted output files (recommended).",
     )
     topfilt: Optional[bool] = Field(
