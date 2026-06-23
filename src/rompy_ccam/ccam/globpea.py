@@ -5,11 +5,19 @@ and can be used to generate the namelist (.nml) and other files for a run of `gl
 """
 
 from datetime import date, time
-from enum import IntEnum
+from enum import Enum, IntEnum
 from pathlib import Path
+import sys
 from typing import Optional, Annotated, Literal
 
-from pydantic import Field, field_serializer
+if sys.version_info >= (3, 11):
+    from typing import Self
+    from enum import StrEnum
+else:
+    from typing_extensions import Self
+    from backports.strenum import StrEnum
+
+from pydantic import Field, field_serializer, model_validator
 
 from ..fileio_config import Input, Output
 from ..rompy_ccam import CCAMRootConfig, CCAMExeConfig
@@ -223,6 +231,123 @@ class GlobpeaHelmholtzMethod(IntEnum):
 
     DAZEVEDO_1 = 0  # !
     DAZEVEDO_STANDARD = 1
+
+
+class GlobpeaRadiationBandLevel(StrEnum):
+    LOW = "low"
+    HIGH = "high"
+
+
+class GlobpeaDiffuseRadiationStreams(IntEnum):
+    ONE = 1
+    FOUR = 4
+
+
+class GlobpeaLongwaveEmissivityParameterisation(StrEnum):
+    FULIOU = "fuliou"
+    EBERTCURRY = "ebertcurry"
+
+
+class GlobpeaLineCatalogForm(StrEnum):
+    HITRAN_1992 = "hitran_1992"
+    HITRAN_2000 = "hitran_2000"
+    HITRAN_2012 = "hitran_2012"
+
+
+class GlobpeaContinuumForm(StrEnum):
+    NONE = "none"
+    CKD2_1 = "ckd2.1"
+    CKD2_4 = "ckd2.4"
+    MT_CKD1 = "mt_ckd1.0"
+    MT_CKD2_5 = "mt_ckd2.5"
+    RSB = "rsb"
+    BPS2 = "bps2.0"
+
+
+class GlobpeaLiquidRadiusMethod(IntEnum):
+    MID_RANGE = 0
+    LOWER_BOUND = 1
+    UPPER_BOUND = 2
+    MID_RANGE_BRENGUIER = 3
+    LOWER_BOUND_BRENGUIER = 4
+    UPPER_BOUND_BRENGIUIER = 5
+
+
+class GlobpeaIceRadiusMethod(IntEnum):
+    LOHMANN = 0  # Lohmann et al 1999
+    DONNER_OLD = 1  # Deprecated; use DONNER_SMOOTH
+    FU = 2  # Fu 2007
+    DONNER_ORIGINAL = 3
+    LINEAR_FEEDBACK = 4
+    DONNER_SMOOTH = 5  # Donner et al 1997
+
+
+class GlobpeaYearsBeforePresent(float, Enum):
+    ZERO = 0.0
+    SIX_THOUSAND = 6000.0
+    TWENTY_ONE_THOUSAND = 21000.0
+
+
+class GlobpeaRadFlag(IntEnum):
+    OFF = -1
+    ON = 0
+
+
+class GlobpeaAeroIndirMode(IntEnum):
+    SO4_CARB_SALT = 0
+    SO4 = 1
+    OFF = 2
+
+
+class GlobpeaAerosolU10Mode(IntEnum):
+    DIAGNOSTIC = 0
+    RECALCULATE = 1
+
+
+class GlobpeaAeroSplitMode(IntEnum):
+    BEFORE_MIXING = 0
+    AFTER_MIXING = 1
+
+
+# TODO: make these names more meaningful/accurate; they're just guesses at the moment
+class GlobpeaConvectionModel(IntEnum):
+    DISABLE = 0
+    JLM = 4
+    JOHN_CONV_22_1 = 21  # incorporates entrainment effects
+    JOHN_CONV_22_2 = 22  # like 23 (partial entrainment effects)
+    JOHN_CONV_1 = 23
+    JOHN_CONV_2 = 24
+    JOHN_CONV_22_JLM2504 = 29  # new cape closure JLM2504
+    GRELL_CONV = 31
+
+
+class GlobpeaCloudMicrophysicsModel(IntEnum):
+    LDR = 0  # Standard LDR cloud microphysics with water vapour, liquid cloud and ice cloud
+    # LDR_UPDATED_AUTOCONVERSION = 1 # As above, but with updated autoconversion scheme
+    LDR_PROGNOSTIC_RAIN_MOD_CFRAC = (
+        2  # As above, but with prognostic rain and modified cfrac
+    )
+    LDR_PROGNOSTIC_RAIN_SNOW_GRAUPEL_MOD_CFRAC = (
+        3  # As above, but with prognostic snow and graupel, as well as modified cfrac
+    )
+    PROGNOSTIC_CLOUD_FRAC_TIEDTKE = (
+        4  # Use prognostic cloud fraction based on Tiedtke from GFDL-CM3
+    )
+    LDR_TIEDTKE = 10  # Same as SLDR with Tiedtke from GFDL-CM3
+    LDR_PROGNOSTIC_RAIN_MOD_CFRAC_TIEDTKE = (
+        12  # Same as LDR_PROGNOSTIC_RAIN_MOD_CFRAC with Tiedtke from GFDL-CM3
+    )
+    LDR_PROGNOSTIC_RAIN_SNOW_GRAUPEL_MOD_CFRAC_TIEDTKE = 13  # Same as LDR_PROGNOSTIC_RAIN_SNOW_GRAUPEL_MOD_CFRAC with Tiedtke from GFDL-CM3 (i.e. same as PROGNOSTIC_CLOUD_FRAC_TIEDTKE)
+    LIN_LEON = (
+        100  # Use Lin et al 2nd moment microphysics with Leon saturation adjustment
+    )
+    # TODO: how is 101 different?
+    LIN_LEON_2 = (
+        101  # Use Lin et al 2nd moment microphysics with Leon saturation adjustment
+    )
+    LIN_LEON_TIEDTKE = 110  # Same as LIN_LEON with Tiedtke from GFDL-CM3
+    # TODO: how is 111 different?
+    LIN_LEON_TIEDTKE_2 = 111  # Same as LIN_LEON with Tiedtke from GFDL-CM3
 
 
 def GlobpeaGridresRecommendedTimestep(
@@ -525,42 +650,35 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         default=None,
         description="Turn on or off nudging for ocean surface height.",
     )
-    # TODO
+    # TODO: reproduce validations that ccam perform on this, e.g. if ensemble_mode != 0 and nmlo !=  then nud_hrs must be > 0
     nud_hrs: Optional[int] = Field(
         default=None,
         description="E-folding time for far-field nudging.",
     )
-    # TODO
     nud_period: Optional[int] = Field(
         default=None,
         description="Limits the period (in mins) to nudge the atmosphere or ocean with the scale-selective filter. Actual nudging period is the minimum of nud_period and the period of data in the host model.",
     )
-    # TODO
     kbotdav: Optional[int] = Field(
         default=None,
         description="Lowest level for atmosphere nudging. -ve value specifies a pressure level with -1000 for 1000 hPa, etc.",
     )
-    # TODO
     ktopdav: Optional[int] = Field(
         default=None,
         description="Highest level for atmosphere nudging. -ve value specifies a pressure level with -1 for 1 hPa, etc.",
     )
-    # TODO
     ktopmlo: Optional[int] = Field(
         default=None,
         description="Highest level for ocean nudging. -ve value specifies a depth in sigma values with -1 being 0.001 sigma level.",
     )
-    # TODO
     kbotmlo: Optional[int] = Field(
         default=None,
         description="Lowest level for ocean nudging. -ve value specifies a depth in sigma values with -1000 being 1 sigma level.",
     )
-    # TODO
     sigramplow: Optional[float] = Field(
         default=None,
         description="Linear ramp rate to grow atmospheric nudging in sigma levels from kbotdav.",
     )
-    # TODO
     sigramphigh: Optional[float] = Field(
         default=None,
         description="Linear ramp rate to grow atmospheric nudging in sigma levels from ktopdav.",
@@ -568,7 +686,6 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
 
     # Ensemble
 
-    # TODO
     ensemble_mode: Optional[GlobpeaEnsembleMode] = Field(
         default=None,
         description="Mode for CCAM ensemble",
@@ -615,7 +732,7 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
         default=None,
         description="Minimum wind speed for calculating surface fluxes in m/s.",
     )
-    # TODO
+    # TODO: values 0, 1 and 2 seem to be used
     nsigmf: Optional[int] = Field(
         default=None,
         description="Modifies soil behaviour with nsib=GlobpeaLandSurfaceModel.ORIGINAL or nsib=GlobpeaLandSurfaceModel.MODIS to essentially increase the heat capacity. Not recommended for GlobpeaRadiationModel=SEA_ESF.",
@@ -649,7 +766,7 @@ class GlobpeaNamelistConfigCardin(CCAMRootConfig):
     )
     ch_dust: Optional[float] = Field(
         default=None,
-        description="Transfer coefficient for natural sources of emissions, in kg*s2/m5.",
+        description="See GlobpeaNamelistConfigSkyin.ch_dust. Here only for backwards compatibility.",
     )
 
     # Boundary layer turbulent mixing
@@ -742,101 +859,128 @@ class GlobpeaNamelistConfigSkyin(CCAMRootConfig):
 
     # Radiation
 
-    # TODO: set correct data types, defaults etc.
-
     mins_rad: Optional[int] = Field(
         default=None,
         description="Period to update radiation in mins.  Setting mins_rad=-1 will automatically select a value based on the grid resolution.",
     )
-    # TODO
     qgmin: Optional[float] = Field(
         default=None,
         description="Minimum value of water vapor mixing ratio.",
     )
-    # TODO
-    sw_resolution: Optional[int] = Field(
+    siglow: Optional[float] = Field(
+        default=None, description="Sigma level for top of low cloud (diagnostic)."
+    )
+    sigmid: Optional[float] = Field(
+        default=None, description="Sigma level for top of medium cloud (diagnostic)."
+    )
+    sw_resolution: Optional[GlobpeaRadiationBandLevel] = Field(
         default=None,
         description="Selects number of radiation bands with sw_resolution=’high’ or sw_resolution=’low’.",
     )
-    # TODO
-    sw_diff_streams: Optional[int] = Field(
+    sw_diff_streams: Optional[GlobpeaDiffuseRadiationStreams] = Field(
         default=None,
         description="Number of streams for diffuse radiation with 1 or 4 as valid options.",
     )
-    # TODO
-    liqradmethod: Optional[int] = Field(
+    lwem_form: Optional[GlobpeaLongwaveEmissivityParameterisation] = Field(
         default=None,
-        description="Method for calculating effective water droplet radius.  Currently the only valid option is 0 for Martin et al 1994.",
+        description="Parameterisation for longwave emissivity (e.g., fuliou).",
     )
-    # TODO
-    iceradmethod: Optional[int] = Field(
+    linecatalog_form: Optional[GlobpeaLineCatalogForm] = Field(
         default=None,
-        description="Method for calculating effective ice droplet radius.  iceradmethod=0 for Lohmann et al 1999, iceradmethod=1 for Donner et al 1997, iceradmethod=2 for Fu 2007.",
+        description="Longwave line catalog specification (e.g., hitran_2012).",
     )
-    # TODO
-    bpyear: Optional[int] = Field(
+    continuum_form: Optional[GlobpeaContinuumForm] = Field(
+        default=None,
+        description="Longwave continuum specification (e.g., ckd2.1).",
+    )
+    do_co2_10um: Optional[bool] = Field(
+        default=None,
+        description="Include 10um band for co2",
+    )
+    do_quench: Optional[bool] = Field(
+        default=None,
+        description="Include quenching for shortwave radiation.",
+    )
+    remain_rayleigh_bug: Optional[bool] = Field(
+        default=None,
+        description="Retain Rayleigh bug in shortwave radiation.",
+    )
+    use_rad_year: Optional[bool] = Field(
+        default=None,
+        description="TODO",
+    )
+    liqradmethod: Optional[GlobpeaLiquidRadiusMethod] = Field(
+        default=None,
+        description="Method for calculating effective water droplet radius.  Currently the only valid option is GlobpeaLiquidRadiusMethod.MID_RANGE for Martin et al 1994.",
+    )
+    iceradmethod: Optional[GlobpeaIceRadiusMethod] = Field(
+        default=None,
+        description="Method for calculating effective ice droplet radius.",
+    )
+    bpyear: Optional[GlobpeaYearsBeforePresent] = Field(
         default=None,
         description="Modifies orbital parameters for paleoclimate simulations.  Valid options are 0, 6000 and 21000 years before present.",
     )
 
     # Aerosols
 
-    # TODO: set correct data types, defaults etc.
-
-    # TODO
-    ch_dust: Optional[int] = Field(
+    ch_dust: Optional[float] = Field(
         default=None,
         description="Scale factor for dust emission model.",
     )
-    # TODO
-    zvolcemi: Optional[int] = Field(
+    zvolcemi: Optional[float] = Field(
         default=None,
         description="Scale factor for volcanic emission model.",
     )
-    # TODO
-    so4radmethod: Optional[int] = Field(
+    so4radmethod: Optional[GlobpeaRadFlag] = Field(
         default=None,
-        description="Turns on (so4radmethod=0) and off (so4radmethod=-1) SO4 aerosol direct effects.",
+        description="Turns on and off SO4 aerosol direct effects.",
     )
-    # TODO
-    carbonradmethod: Optional[int] = Field(
+    carbonradmethod: Optional[GlobpeaRadFlag] = Field(
         default=None,
-        description="Turns on (carbonradmethod=0) and off (carbonradmethod=-1) carbonaceous aerosol direct effects.",
+        description="Turns on and off carbonaceous aerosol direct effects.",
     )
-    # TODO
-    dustradmethod: Optional[int] = Field(
+    dustradmethod: Optional[GlobpeaRadFlag] = Field(
         default=None,
-        description="Turns on (dustradmethod=0) and off (dustradmethod=-1) dust aerosol direct effects.",
+        description="Turns on and off dust aerosol direct effects.",
     )
-    # TODO
-    seasaltradmethod: Optional[int] = Field(
+    seasaltradmethod: Optional[GlobpeaRadFlag] = Field(
         default=None,
-        description="Turns on (seasaltradmethod=0) and off (seasaltradmethod=-1) sea-salt aerosol direct effects.",
+        description="Turns on and off sea-salt aerosol direct effects.",
     )
-    # TODO
-    aeroindir: Optional[int] = Field(
+    aeroindir: Optional[GlobpeaAeroIndirMode] = Field(
         default=None,
         description="Controls aerosol indirect effects with aeroindir=0 for SO4+Carb+Salt, aeroindir=1 for SO4 and aeroindir=2 for off.",
     )
-    # TODO
-    so4mtn: Optional[int] = Field(
+    so4mtn: Optional[float] = Field(
         default=None,
         description="Mass to number conversion for SO4.  Modifies indirect effects.",
     )
-    # TODO
-    carbmtn: Optional[int] = Field(
+    carbmtn: Optional[float] = Field(
         default=None,
         description="Mass to number conversion for carbonaceous aerosols.  Modifies indirect effects.",
     )
-    # TODO
-    saltsmallmtn: Optional[int] = Field(
+    saltsmallmtn: Optional[float] = Field(
         default=None,
         description="Mass to number conversion for sea-salt film mode.  Modifies direct effects.",
     )
-    # TODO
-    saltlagemtn: Optional[int] = Field(
+    saltlargemtn: Optional[float] = Field(
         default=None,
         description="Mass to number conversion for sea-salt jet mode.  Modifies direct effects.",
+    )
+    enhanceu10: Optional[int] = Field(
+        default=None,
+        ge=0,
+        le=2,
+        description="Use enhanced 10m wind gusts",
+    )
+    aerosol_u10: Optional[GlobpeaAerosolU10Mode] = Field(
+        default=None,
+        description="Aerosol parameterisation recalculate 10m wind speed.",
+    )
+    aero_split: Optional[GlobpeaAeroSplitMode] = Field(
+        default=None,
+        description="Update aerosols after turbulent mixing or after land-surface.",
     )
 
 
@@ -1076,10 +1220,8 @@ class GlobpeaNamelistConfigKuo(CCAMRootConfig):
     """&kuonml section of globpea config namelist. Options to modify convection and cloud microphysics."""
 
     # Convection
-    # TODO: set correct data types, defaults etc.
 
-    # TODO
-    nkuo: Optional[int] = Field(
+    nkuo: Optional[GlobpeaConvectionModel] = Field(
         default=None,
         description="specifies the convection model.",
     )
@@ -1087,8 +1229,7 @@ class GlobpeaNamelistConfigKuo(CCAMRootConfig):
     # Cloud microphysics
     # TODO: set correct data types, defaults etc.
 
-    # TODO
-    ncloud: Optional[int] = Field(
+    ncloud: Optional[GlobpeaCloudMicrophysicsModel] = Field(
         default=None,
         description="specifies the model used for cloud microphysics.  Further details can be obtained from https://research.csiro.au/ccam/software-and-model-configuration/globpea-atmospheric-model/kuonml-convection-and-cloud-microphysics/ncloud/.",
     )
@@ -1275,7 +1416,7 @@ class GlobpeaNamelistConfigTurb(CCAMRootConfig):
     # TODO
     stabmeth: Optional[int] = Field(
         default=None,
-        description="– Method for calculating stability.  stabmeth=0 for Beljarrs and Holtslag 1991.  stabmeth=1 for Luhar correction.",
+        description="Method for calculating stability.  stabmeth=0 for Beljarrs and Holtslag 1991.  stabmeth=1 for Luhar correction.",
     )
     # TODO
     cm0: Optional[int] = Field(
